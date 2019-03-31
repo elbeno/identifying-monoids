@@ -1,0 +1,91 @@
+* Bio
+
+Ben Deane
+@ben_deane
+
+Ben was a game programmer for over 20 years, working in C++ since the late 90s
+for companies like EA and Blizzard. In 2018 he left the games industry to join
+Quantlab, an automated trading firm, where he writes modern, well-performing
+C++. He likes to play with algorithms, and to make the type system work for him,
+and he’s always looking for useful new techniques. Ben is the presenter of
+several previous C++Now and CppCon talks.
+
+* Title
+
+Identifying Monoids: Exploiting Compositional Structure in Code
+
+* Session Type
+
+lecture
+
+* Audience
+ - Intermediate
+ - Advanced
+ - Expert
+
+* Audience Description
+
+library authors, application developers, API designers, architects
+
+* Tags
+
+architecture, composition, APIs, design patterns
+
+* Session length
+
+Preferred: 90 minutes
+Minimum: 90 minutes
+Maximum: 90 minutes
+
+* Session Description
+
+Composition is the essence of code architecture, and monoids are a powerful and
+underappreciated compositional pattern that is lurking in code of all kinds.
+Identifying and exploiting monoids is perhaps the best way to improve our code's
+large-scale architecture, in the same way that recognizing algorithms and
+replacing raw loops is a great way to improve small-scale architecture.
+
+When we start looking for monoids, we find that they are everywhere, and it's
+not just about std::accumulate with addition! In this talk I want to develop an
+intuition for recognizing this ubiquitous design pattern. I will show some ways
+to think about code capabilities at a higher level, and how thinking in terms of
+monoids can help us with things like API design, incremental computation,
+evolving system state and distributing work. Along the way we'll also look at
+how C++ language and library features can support putting monoids to work in our
+code.
+
+NB. Don't worry - monoids aren't the same thing as monads! This isn't a talk
+evangelizing functional programming abstractions in C++.
+
+* Outline
+
+ - What are monoids, and why are they important?
+ - How to recognize lurking monoids
+ - The "obvious" first monoids
+   - things that are "number-like"
+   - strings and vectors
+ - Going beyond the obvious and making our own
+   - data structures
+   - functions
+   - evolving state
+   - futures
+   - composing monoids, monoid homomorphisms
+ - C++ support
+   - refactoring to monoids
+   - making monoids with std::optional
+   - standard algorithms
+   - standards limitations
+   - ought-to-be-standard (?) algorithms
+   - ranges
+ - Macro-architectural topics
+   - Balanced reduction
+   - Incremental computation
+   - Distributing work
+ - Applications of monoids
+   - Serialization
+   - Statistics
+   - Probabilistic algorithms and data structures
+   - Configuration
+   - Parsing
+   - Regular Expressions
+   - etc
