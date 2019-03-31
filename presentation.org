@@ -1,0 +1,356 @@
+#    -*- mode: org -*-
+#+OPTIONS: reveal_center:t reveal_progress:t reveal_history:t reveal_control:t
+#+OPTIONS: reveal_mathjax:t reveal_rolling_links:nil reveal_keyboard:t reveal_overview:t num:nil
+#+OPTIONS: reveal_width:1600 reveal_height:900
+#+OPTIONS: toc:nil <:nil timestamp:nil email:t reveal_slide_number:"c/t"
+#+REVEAL_MARGIN: 0.1
+#+REVEAL_MIN_SCALE: 0.5
+#+REVEAL_MAX_SCALE: 2.5
+#+REVEAL_TRANS: none
+#+REVEAL_THEME: blood
+#+REVEAL_HLEVEL: 1
+#+REVEAL_EXTRA_CSS: ./presentation.css
+#+REVEAL_ROOT: ../reveal.js/
+
+#+TITLE: Identifying Monoids
+#+AUTHOR: Ben Deane
+#+EMAIL: bdeane@quantlab.com
+#+DATE: May 2019
+
+#+REVEAL_HTML: <script type="text/javascript" src="./presentation.js"></script>
+
+* Title slide settings                                             :noexport:
+#+BEGIN_SRC emacs-lisp
+(setq org-reveal-title-slide
+(concat "<h2>%t</h2>"
+"<div class='vertspace2'></div>"
+"<h3>(and subsequently exploiting them)</h3>"
+"<div class='vertspace2'></div>"
+"<h3>%a / <a href=\"http://twitter.com/ben_deane\">@ben_deane</a></h3>"
+"<h4>%d</h4>"))
+#+END_SRC
+
+* Yep, it's a monoid
+
+* Why
+
+Why are monoids important?
+
+Why is "abstract mathematics" important for programming?
+
+#+begin_notes
+There are people who think that mathematics has no place in programming. They
+are looking at things the wrong way. When we program, we're doing maths whether
+we know it or not, and it helps us to realize that.
+
+Composition is the essence of programming architecture. Abstract algebra is the
+framework for ideas of composition.
+
+You can program without maths, just like you can bake without knowing chemistry.
+But you're doing it anyway. You already have an intuition for it.
+
+Abstract algebra is to programming what calculus is to modelling the real world.
+#+end_notes
+
+* How brains work
+
+It's not very useful for me to tell you the definition of a monoid.
+
+You'll understand it, and you'll think, "so what"?
+
+What is better is showing you lots of different monoids so that you get an
+intuition about how to recognize them; your brain forms its own
+pattern-recognition pathways. This is what brains do (very well).
+
+When you've got that sense, then it's useful to fill in theory.
+
+* My favourite quote
+
+"Discovery consists of seeing what everybody has seen, and thinking what nobody
+has thought."
+
+Albert Szent-Györgyi. (Hungarian Nobel Laureate in Medicine, 1937)
+
+I hope that after this talk you can look at your code in a new way and think
+what you have not thought before.
+
+* What is a monoid?
+
+* Why is it important to recognize them?
+
+Architecture.
+A means to talk about what's happening in our code.
+
+It's not about functional programming, it's not about abstraction for its own
+sake.
+
+Computational sympathy.
+
+* Abstraction
+
+"Being abstract is something profoundly different from being vague … The purpose
+of abstraction is not to be vague, but to create a new semantic level in which
+one can be absolutely precise."
+
+--EWD
+
+* Design Patterns
+
+Compare Design Patterns.
+
+There are people who get the wrong end of the stick about this. There are people
+who, for example, tweet that they're hiring, but say things like "use of Design
+Patterns is a negative".
+
+Design Patterns came out in 1995. The implementations in it are of their time.
+They represent a Java-style, late 90s, heavy-OO, dynamic dispatch style of
+implementation. That's not the lasting legacy of the book.
+
+If we're talking about code and I say to you, "I think we could solve this with
+a visitor pattern", I'm not saying "let's open the Gang of Four book and
+implement all this machinery to implement dynamic double-dispatch." I'm saying
+"I think we could benefit from the ability to easily add behaviours over types."
+And we can implement that using all the tools we have in our toolbox and make it
+perform arbitrarily well according to our needs.
+
+* The power of abstraction
+
+We can talk about our code's needs rather than how to implement those needs
+
+* Late night coding with Simeon
+
+You only have a binary operation to combine objects
+You have a list of objects to combine
+Show a raw loop
+Realize it's an accumulate - we have a monoid!
+
+* Alex Stepanov
+
+Saw/realised the structure of monoids/semigroups while sick
+
+* Why?
+
+When we recognize monoids, we gain the ability to separate concerns.
+
+If we write code as raw loops, we commingle the business logic with the code
+that handles control flow.
+
+Instead of having to learn anew how each computation in our code works, a user
+of our code/library just has to learn one idea: that of accumulation. They don't
+have to puzzle out what each loop is doing.
+
+* The obvious monoids
+
+* Addition & Multiplication
+
+Many things that are "number-like"
+ints, floats, vectors, matrices, complex numbers
+
+* How to Identify a monoid
+ - closed
+ - associative
+ - identity
+
+Note: not commutative
+
+Intuition for associativity: combining things on the left doesn't interfere with
+combining things on the right.
+
+* Min and Max
+
+Sometimes not monoids (min) but still semigroups
+
+* Optional
+
+Make a semigroup into a monoid!
+
+* Strings and vectors
+
+All things concatenation
+
+* Booleans
+
+and, or, xor
+
+* Sets and Maps
+
+Monoids on their value types
+
+* Structs, pairs and tuples
+
+Product types are monoidal if their constituents are
+This is useful for accumulating effects
+cf. Writer monad
+http://blog.sigfpe.com/2009/01/haskell-monoids-and-their-uses.html
+
+* Functions
+
+Monoidal on their outputs
+cf. maps
+
+* Tree structures
+
+"Normal" monoids have two operations:
+ - one for combining with identity
+ - one for combining with value
+
+If we look at a tree structure as a sum type, we can extend this to:
+ - one for combining each type of value
+
+And we can run functions over tree structures, accumulating the values. Just
+like std::accumulate, this gives us the power to separate the meaning of what
+we're doing from the control flow of how we're doing it.
+
+Most of the algorithms in the STL deal with linear sequences. And that's most of
+what we handle. But quite often we handle treelike structures. It's much more
+likely then that we'll fail to see the essential computation that's going on and
+fall back on a raw loop because we think algorithms can't deal with what we're
+doing. If we think in terms of monoids, we can get that separation of control
+flow from logic and we can often use an accumulate-like algorithm to separate
+the control flow.
+
+* Endofunctions
+
+Functions from A to A
+Processes evolving in time
+std::iota
+std::iterate
+ranges
+
+Examples:
+
+ - Eller's algo for maze generation - plain std::accumulate (linear data dependence)
+   or partial_sum for intermediate output (good range example?)
+
+ - RNG - LCG is a linear recurrence relation f :: a -> a
+   represent as a matrix -> function composition is raising to nth power (log n)
+   can "fast forward" RNG in log time because it's a monoid
+https://www.nayuki.io/page/fast-skipping-in-a-linear-congruential-generator
+
+Research:
+
+https://meetingcpp.com/blog/items/ranges-for-numerical-problems-402.html
+https://www.youtube.com/watch?v=13r9QY6cmjc
+http://people.math.gatech.edu/~ecroot/recurrence_notes2.pdf
+
+* Futures
+
+when_any and never
+UI applications
+
+* Stronger than monoids
+Commutativity
+Existence of an inverse
+
+* Accumulate vs reduce
+
+Reduce requires commutativity for vectorization
+Data-level parallelism at war with function-level parallelism
+(parallelism vs concurrency)
+
+* Balanced reduction
+
+* Incremental computation
+
+* Bigger applications
+
+** Serialization
+Monoid-like, but with varying types
+
+** Profiling
+Another kind of serialization
+
+** Statistics
+Keeping a mean
+Keeping a median
+Top n
+Histograms
+
+** Probabilistic algorithms
+"Fantastic algorithms and where to find them"
+"Add ALL the things!"
+
+Hyperloglog
+Count min-sketch
+
+** Config
+
+JSON objects, databases, configuration blobs, sets of command-line flags
+Protocol buffers
+
+We "reinvent" monoids all the time without realizing it! Most of the time when
+we deal with these kinds of things, we don't think about their monoidal nature.
+
+https://mail.haskell.org/pipermail/haskell-cafe/2009-January/053709.html
+
+** Parsers
+
+Parsers are monoids under alternation. The identity is the parser that always
+fails. This is a common pattern if you have an operation that can fail.
+
+cf. when_any
+cf. optional
+
+** Monoid homomorphisms
+
+A function that preserves the monoid structure. If A and B are monoids under
+some operations, then f :: A -> B is a monoid homomorphism if it preserves the
+structure.
+
+e.g.
+ - strings are monoids under concatenation.
+ - integers are monoids under addition.
+
+string length is a monoid homomorphism.
+
+** Why use monoid homomorphisms?
+
+- to get into a space that is easier to reason about
+- to be able to do more
+- for performance
+- all of the above
+
+** For perf?
+
+We're always doing things for performance reasons of course.
+We're often computing things in a "different space" for perf reasons.
+
+e.g.
+
+In vector spaces, we can avoid square roots when computing magnitudes because we
+can compare to a precomputed magnitude in "squared space" instead.
+
+In vector spaces, we measure angles between vectors by comparing with
+precomputed cosine constants rather than doing an inverse trig function.
+
+** Ofuscated example
+
+#+begin_src c
+main(n){float r,i,R,I,b;for(i=-1;i<1;i+=.06,puts(""))for(r=-2;I=i,(R=r)<1;
+r+=.03,putchar(n+31))for(n=0;b=I*I,26>n++&&R*R+b<4;I=2*R*I+i,R=R*R-b+r);}
+#+end_src
+
+#+begin_notes
+We're so used to working in "a more computationally efficient space".
+
+Maybe you can guess what this does? Hint: it's from the mid-90s.
+
+Check out the "R*R+b<4" part.
+#+end_notes
+
+** Monoid Homomorphism example
+
+The usual example is string -> int (length).
+
+Sometimes the monoid is buried. Often the "surface" monoid is a monoid we can't
+express very well in C++. Like function composition.
+
+LCG example.
+
+** Regular expressions
+
+http://blog.sigfpe.com/2009/01/fast-incremental-regular-expression.html
+
+** Tournaments
+
+** Diagrams

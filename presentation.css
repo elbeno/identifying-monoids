@@ -1,0 +1,187 @@
+@font-face {
+    font-family: "Inconsolata";
+    font-style: normal;
+    font-weight: normal;
+    src: local("Inconsolata"), url("http://themes.googleusercontent.com/static/fonts/inconsolata/v3/BjAYBlHtW3CJxDcjzrnZCIbN6UDyHWBl620a-IRfuBk.woff") format("woff");
+}
+
+.reveal code {
+    font-family: Inconsolata;
+    text-transform: initial;
+    color: rgb(231, 173, 82);
+}
+
+.reveal p code {
+    background-color: #222222;
+}
+
+.reveal a {
+    text-transform: initial;
+}
+
+.reveal pre {
+    font-family: Inconsolata;
+    font-size: 28px;
+}
+
+.org-src-container pre {
+    padding: 20px;
+
+    /* for dark theme */
+    /* color: #dcdccc; */
+    /* background-color: #111111; */
+
+    /* for light theme */
+    color: #222222;
+    background-color: #fdf6e3;
+}
+
+.reveal h2,
+.reveal h3 {
+    color: rgb(238, 238, 238);
+}
+
+#sec-title-slide h2 {
+    font-size: 100px;
+    color: rgb(238, 238, 238);
+}
+
+.reveal .vertspace1 {
+    padding-bottom: 1cm;
+}
+.reveal .vertspace2 {
+    padding-bottom: 2cm;
+}
+.reveal .vertspace3 {
+    padding-bottom: 3cm;
+}
+.reveal .vertspace4 {
+    padding-bottom: 4cm;
+}
+.reveal .vertspace5 {
+    padding-bottom: 5cm;
+}
+.reveal .vertspace6 {
+    padding-bottom: 6cm;
+}
+.reveal blockquote {
+    background-color: #111111;
+    padding-right: 15px;
+    padding-left: 15px;
+}
+.reveal blockquote .author {
+    float: right;
+    margin-right: 15px;
+    padding-top: 15px;
+}
+.reveal blockquote tt {
+    font-style: normal;
+}
+.reveal section img {
+    border: 0px;
+    background: #222222;
+    box-shadow: none;
+}
+
+#sec-title-slide h3 {
+    font-size: 60px;
+    color: rgb(238, 238, 238);
+}
+
+.reveal .slide-number {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    font-family: Inconsolata;
+    font-size: 28px;
+    font-weight: bold;
+    color: rgb(231, 173, 82);
+    background-color: transparent;
+}
+
+.reveal .controls {
+    color: rgb(231, 173, 82);
+}
+
+.reveal .progress span {
+    background: rgb(231, 173, 82);
+}
+
+.reveal a {
+    color: rgb(231, 173, 82);
+}
+
+#left {
+  left:-8.33%;
+  text-align: left;
+  float: left;
+  width:50%;
+  z-index:-10;
+}
+
+#left2 {
+  left:-8.33%;
+  text-align: right;
+  float: left;
+  width:45%;
+  z-index:-10;
+}
+
+#right {
+  left:31.25%;
+  top: 75px;
+  float: right;
+  text-align: right;
+  z-index:-10;
+  width:50%;
+}
+
+#right2 {
+  left:31.25%;
+  top: 75px;
+  float: right;
+  text-align: right;
+  z-index:-10;
+  width:45%;
+}
+
+.reveal td {
+    border: 2px solid white;
+}
+.reveal th {
+    color: rgb(231, 173, 82);
+    border: 2px solid white;
+}
+.reveal table {
+    border: 2px solid white;
+}
+
+.reveal .star {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    text-align: center;
+}
+.reveal .star img {
+    border: 0px;
+    background: rgba(255,255,255,0);
+}
+.reveal .star .text_over_img {
+    font-family: Inconsolata;
+    font-size: 28px;
+    font-weight: 700;
+    color: rgb(231, 173, 82);
+    position: absolute;
+    margin: auto;
+    top: 35px;
+    bottom: 0;
+    left: 8px;
+    right: 0;
+}
+
+#ce-root {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
