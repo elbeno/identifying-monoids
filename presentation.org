@@ -17,20 +17,35 @@
 #+EMAIL: bdeane@quantlab.com
 #+DATE: May 2019
 
+#+REVEAL_HTML: <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 #+REVEAL_HTML: <script type="text/javascript" src="./presentation.js"></script>
 
 * Title slide settings                                             :noexport:
 #+BEGIN_SRC emacs-lisp
-(setq org-reveal-title-slide
+(setq org-re-reveal-title-slide
 (concat "<h2>%t</h2>"
+"<h3>Exploiting Compositional Structure in Code</h3>"
 "<div class='vertspace2'></div>"
-"<h3>(and subsequently exploiting them)</h3>"
+"<img src=\"./wood.png\"/>"
+"<p>\\(\\left \\{ \\mathbb{Z}, \\times, 1 \\right \\}\\)</p>"
 "<div class='vertspace2'></div>"
-"<h3>%a / <a href=\"http://twitter.com/ben_deane\">@ben_deane</a></h3>"
-"<h4>%d</h4>"))
+"<h4>%a / <a href=\"http://twitter.com/ben_deane\">@ben_deane</a>"
+" / C++Now / Aspen, CO / %d</h4>"))
 #+END_SRC
 
-* Yep, it's a monoid
+* Let's get this out of the way.
+
+A monoid is NOT the same thing as a monad.
+
+#+begin_notes
+Some of you already know this. (How many people know all about monoids?)
+
+Some people, online or wherever, may be confused, so I wanted to be clear.
+
+This isn't a talk with a lot of category theory. I'm probably going to say lots
+of things that mathematicians will take issue with. I'm going to try ground this
+talk in examples.
+#+end_notes
 
 * Why
 
@@ -39,12 +54,15 @@ Why are monoids important?
 Why is "abstract mathematics" important for programming?
 
 #+begin_notes
-There are people who think that mathematics has no place in programming. They
-are looking at things the wrong way. When we program, we're doing maths whether
-we know it or not, and it helps us to realize that.
+(Tell the Simeon story.)
 
-Composition is the essence of programming architecture. Abstract algebra is the
-framework for ideas of composition.
+There are people who think this kind of mathematics has no place in programming.
+(They don't seem to mind other kinds of maths like linear algebra.) They are
+looking at things the wrong way.
+
+When we program, we're doing maths whether we know it or not, and it helps us to
+realize that. Composition is the essence of programming architecture. Abstract
+algebra is the framework for ideas of composition.
 
 You can program without maths, just like you can bake without knowing chemistry.
 But you're doing it anyway. You already have an intuition for it.
@@ -52,27 +70,79 @@ But you're doing it anyway. You already have an intuition for it.
 Abstract algebra is to programming what calculus is to modelling the real world.
 #+end_notes
 
+* A quick code review
+
+#+begin_src c++
+void RepositionListItem(int drag_start_idx, int drop_idx) {
+  // grab the dragged item
+  Item* item = list_items_[drag_start_index];
+
+  // move the rest down
+  for (auto i = drag_start_idx + 1; i < list_items_.size(); ++i) {
+    list_items_[i-1] = list_items_[i];
+  }
+  list_items_.pop_back();
+
+  // re-insert at the drop index
+  list_items_.insert(item, list_items_.begin() + drop_idx);
+}
+#+end_src
+
+#+ATTR_REVEAL: :frag (appear)
+ - "This is (obviously?) a rotate."
+ - And there's a bug here. Is ~drag_start_idx~ ~>~ ~drop_idx~?
+
+#+begin_notes
+What would you suggest for this code review?
+
+What is this code doing?
+
+Do you see any problems?
+#+end_notes
+
+* How did we know that?
+
+Expertise.
+
+ - Hard to say how
+ - Difference in perception
+   - Selectivity of attention
+   - Units of perception
+   - Unconscious search strategies
+ - Speed of processing
+
+#+begin_notes
+These are the hallmarks of expertise. A difference in what we pay attention to.
+A difference in the chunk size of things we perceive. A difference in the search
+patterns we pursue. And a huge speed difference.
+
+Everyone here is a C++ expert. We probably can't really explain how we knew the
+problems. You just had a "spidey sense". A C++ novice looking at the code may
+not even know where to begin.
+#+end_notes
+
 * How brains work
 
-It's not very useful for me to tell you the definition of a monoid.
+1. See lots of examples with lots of variation. Some variation is relevant,
+   some is not.
+1. Figure out which variation is relevant, and classify.
+1. Trial and error: rinse, repeat...
+1. Result after time: "instinctual" expertise
 
-You'll understand it, and you'll think, "so what"?
+#+ATTR_REVEAL: :frag (appear)
+So let's get going.
 
-What is better is showing you lots of different monoids so that you get an
-intuition about how to recognize them; your brain forms its own
-pattern-recognition pathways. This is what brains do (very well).
+#+begin_notes
+We can say how we got here, because this is what brains do. We don't learn by
+applying abstract rules. We learn by this process.
 
-When you've got that sense, then it's useful to fill in theory.
+So in this talk, mostly I'm going to show lots of different monoids, so that we
+get an intuition about how to recognize them; each brain experiencing this talk
+will form its own pattern-recognition pathways. This is what brains do (very
+well).
 
-* My favourite quote
-
-"Discovery consists of seeing what everybody has seen, and thinking what nobody
-has thought."
-
-Albert Szent-Györgyi. (Hungarian Nobel Laureate in Medicine, 1937)
-
-I hope that after this talk you can look at your code in a new way and think
-what you have not thought before.
+When we have that sense, then it can be useful to fill in more theory.
+#+end_notes
 
 * What is a monoid?
 
@@ -354,3 +424,20 @@ http://blog.sigfpe.com/2009/01/fast-incremental-regular-expression.html
 ** Tournaments
 
 ** Diagrams
+
+
+* My favourite quote
+
+"Discovery consists of seeing what everybody has seen, and thinking what nobody
+has thought."
+
+Albert Szent-Györgyi. (Hungarian Nobel Laureate in Medicine, 1937)
+
+#+begin_notes
+I hope that after this talk you can look at your code in a new way and think
+what you have not thought before.
+#+end_notes
+
+* References
+/Cultivating Instinct/ Katrina Owen
+https://www.youtube.com/watch?v=Q1Tlo4VnQrA
