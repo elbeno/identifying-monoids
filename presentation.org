@@ -2,7 +2,7 @@
 #+OPTIONS: reveal_center:t reveal_progress:t reveal_history:t reveal_control:t
 #+OPTIONS: reveal_mathjax:t reveal_rolling_links:nil reveal_keyboard:t reveal_overview:t num:nil
 #+OPTIONS: reveal_width:1600 reveal_height:900
-#+OPTIONS: toc:nil <:nil timestamp:nil email:t reveal_slide_number:"c/t"
+#+OPTIONS: tex:t toc:nil <:nil timestamp:nil email:t reveal_slide_number:"c/t"
 #+REVEAL_MARGIN: 0.1
 #+REVEAL_MIN_SCALE: 0.5
 #+REVEAL_MAX_SCALE: 2.5
@@ -17,7 +17,7 @@
 #+EMAIL: bdeane@quantlab.com
 #+DATE: May 2019
 
-#+REVEAL_HTML: <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+# +REVEAL_HTML: <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 #+REVEAL_HTML: <script type="text/javascript" src="./presentation.js"></script>
 
 * Title slide settings                                             :noexport:
@@ -33,7 +33,9 @@
 " / C++Now / Aspen, CO / %d</h4>"))
 #+END_SRC
 
-* Let's get this out of the way.
+* Introduction
+
+** Let's get this out of the way.
 
 A monoid is NOT the same thing as a monad.
 
@@ -47,7 +49,7 @@ of things that mathematicians will take issue with. I'm going to try ground this
 talk in examples.
 #+end_notes
 
-* Why
+** Why
 
 Why are monoids important?
 
@@ -70,7 +72,7 @@ But you're doing it anyway. You already have an intuition for it.
 Abstract algebra is to programming what calculus is to modelling the real world.
 #+end_notes
 
-* A quick code review
+** A quick code review
 
 #+begin_src c++
 void RepositionListItem(int drag_start_idx, int drop_idx) {
@@ -83,7 +85,7 @@ void RepositionListItem(int drag_start_idx, int drop_idx) {
   }
   list_items_.pop_back();
 
-  // re-insert at the drop index
+  // re-insert the item ("drop" it)
   list_items_.insert(item, list_items_.begin() + drop_idx);
 }
 #+end_src
@@ -100,7 +102,7 @@ What is this code doing?
 Do you see any problems?
 #+end_notes
 
-* How did we know that?
+** How did we know that?
 
 Expertise.
 
@@ -121,7 +123,7 @@ problems. You just had a "spidey sense". A C++ novice looking at the code may
 not even know where to begin.
 #+end_notes
 
-* How brains work
+** How brains work
 
 1. See lots of examples with lots of variation. Some variation is relevant,
    some is not.
@@ -144,9 +146,35 @@ well).
 When we have that sense, then it can be useful to fill in more theory.
 #+end_notes
 
-* What is a monoid?
+** What is a monoid?
 
-* Why is it important to recognize them?
+A set of values.
+ - finite or infinite
+
+A binary operation.
+ - closed
+ - associative
+
+One special value in the set.
+ - the identity
+
+#+begin_notes
+Before I show examples, here is some context to understand them.
+#+end_notes
+
+* Motivation
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+(In response to post-talk questions about how to "identify your monoids")
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+#+REVEAL_HTML: <blockquote nil><p>&quot;As a writer of a library, or code that someone else will use,<br>
+#+REVEAL_HTML: identifying monoids in your code -- in your types and your<br>
+#+REVEAL_HTML: operations -- I think is one of the single biggest things<br>
+#+REVEAL_HTML: you can do to help users of your library.&quot;</p>
+#+REVEAL_HTML: <div></div><div class='author'>-- me, <em>Easy to Use, Hard to Misuse: Declarative Style in C++</em></div></blockquote>
+
+** Why is it important to recognize them?
 
 Architecture.
 A means to talk about what's happening in our code.
@@ -156,15 +184,15 @@ sake.
 
 Computational sympathy.
 
-* Abstraction
+** Abstraction
 
-"Being abstract is something profoundly different from being vague … The purpose
+"Being abstract is something profoundly different from being vague... the purpose
 of abstraction is not to be vague, but to create a new semantic level in which
 one can be absolutely precise."
 
 --EWD
 
-* Design Patterns
+** Design Patterns
 
 Compare Design Patterns.
 
@@ -183,22 +211,22 @@ implement all this machinery to implement dynamic double-dispatch." I'm saying
 And we can implement that using all the tools we have in our toolbox and make it
 perform arbitrarily well according to our needs.
 
-* The power of abstraction
+** The power of abstraction
 
 We can talk about our code's needs rather than how to implement those needs
 
-* Late night coding with Simeon
+** Late night coding with Simeon
 
 You only have a binary operation to combine objects
 You have a list of objects to combine
 Show a raw loop
 Realize it's an accumulate - we have a monoid!
 
-* Alex Stepanov
+** Alex Stepanov
 
 Saw/realised the structure of monoids/semigroups while sick
 
-* Why?
+** Why?
 
 When we recognize monoids, we gain the ability to separate concerns.
 
@@ -209,38 +237,264 @@ Instead of having to learn anew how each computation in our code works, a user
 of our code/library just has to learn one idea: that of accumulation. They don't
 have to puzzle out what each loop is doing.
 
-* The obvious monoids
 
-* Addition & Multiplication
+* Examples
 
-Many things that are "number-like"
-ints, floats, vectors, matrices, complex numbers
+#+REVEAL_HTML: <div class='vertspace2'></div>
+We'll start with the obvious ones
 
-* How to Identify a monoid
- - closed
- - associative
- - identity
+** The Obvious Monoids
+#+REVEAL_HTML: <div class='vertspace2'></div>
 
-Note: not commutative
+There's a reason why the default operation of ~accumulate~ is addition.
 
-Intuition for associativity: combining things on the left doesn't interfere with
-combining things on the right.
+#+REVEAL_HTML: <div class='vertspace2'></div>
 
-* Min and Max
+ - \( \left \{ \mathbb{R}, +, 0 \right \} \)
+ - \( \left \{ \mathbb{R}, \times, 1 \right \} \)
 
-Sometimes not monoids (min) but still semigroups
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+For \(\mathbb{R}\), read also \(\mathbb{Z}\) or \(\mathbb{N}\). (And also
+\(\mathbb{C}\)).
+
+#+begin_notes
+A grade school child can understand monoids. Notice the three properties:
+
+ - closed operation (it's so obvious with these examples, but it's really important
+as we shall see later)
+ - associativity: it doesn't matter how we group them
+ - there is an identity (and only one)
+
+Notice these are commutative, but commutativity is not required.
+#+end_notes
+
+** Addition & Multiplication
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+Cover many things that are "number-like".
+
+ - integers (approximated by ~int~ etc)
+ - real numbers (approximated by ~float~ or ~double~)
+ - complex numbers
+ - vectors (in the mathematical sense)
+ - matrices
+
+We can use (almost) any of these with ~accumulate~ (or fold expressions)\\
+and ~plus~ or ~multiplies~.
+
+#+begin_notes
+In C++ of course, we normally approximate all these things with finite datatypes.
+
+A complex number is just a pair in the complex plane with memberwise addition.
+Recall for multiplication we multiply the magnitudes (moduli) and sum the angles
+(arguments). The identity is therefore (1, 0).
+
+For vectors we can do memberwise addition, but we can't do multiplication: the
+dot product isn't closed, and the cross product has no identity since it always
+produces a vector perpendicular to the two inputs.
+
+Matrix addition is memberwise. Note matrix multiplication isn't commutative.
+#+end_notes
+
+** ~min~ and ~max~
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+It's clear that ~max~ is a monoid on positive numbers:
+
+\( \left \{ \mathbb{Z^+}, max, 0 \right \} \)
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+~min~ is less clear mathematically...
+
+\( \left \{ \mathbb{Z}, min, ? \right \} \)
+
+... but we can often use ~numeric_limits<T>::max~ as the identity.
+
+#+begin_notes
+Again for Z, read "anything numeric".
+
+Mirror situations apply for dealing with negative numbers.
+#+end_notes
+
+** Boolean values: AND and OR
+#+REVEAL_HTML: <div class='vertspace2'></div>
+ \( \left \{ \{true, false\}, \land, true \right \} \)
+#+begin_src c++
+template <typename... Args>
+bool all(Args... args) { return (... && args); }
+#+end_src
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+ \( \left \{ \{true, false\}, \lor, false \right \} \)
+#+begin_src c++
+template <typename... Args>
+bool any(Args... args) { return (... || args); }
+#+end_src
+
+#+begin_notes
+C++ allows us to use logical AND and logical OR in unary folds.
+
+The value for an empty pack with AND is ~true~.
+
+The value for an empty pack with OR is ~false~.
+#+end_notes
+
+** Boolean values: XOR
+#+REVEAL_HTML: <div class='vertspace2'></div>
+\( \left \{ \{true, false\}, \oplus, false \right \} \)
+
+| A       | B       | Result  |
+|---------+---------+---------|
+| ~false~ | ~false~ | ~false~ |
+| ~false~ | ~true~  | ~true~  |
+| ~true~  | ~false~ | ~true~  |
+| ~true~  | ~true~  | ~false~ |
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+Note: exclusive-or on ~bool~ is ~operator!=~
+
+#+begin_notes
+For XOR, the identity is ~false~ as we can see from the truth table.
+
+In C++, we don't have logical XOR (~^^~?) but we do have bitwise XOR.
+#+end_notes
+
+* Code Interlude
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+Recognizing accumulation-style algorithms
+
+** Code: the obvious algorithms
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+The following algorithms are almost a dead giveaway:
+
+ - ~accumulate~, ~reduce~
+ - basically, all the algorithms in ~<numeric>~
+ - fold expressions
+
+** ~<algorithm>~: the other "usual suspects"
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+Suspect a monoid whenever you find yourself using the following algorithms:
+
+ - ~all_of~, ~any_of~, ~none_of~
+ - (therefore also ~find~ and friends)
+ - ~min_element~, ~max_element~, ~minmax_element~
+ - ~count~, ~count_if~
+ - ~equal~
+
+** Useful reformulations of ~accumulate~
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+#+begin_src c++
+template <class InputIt, class Size, class T, class BinaryOp>
+constexpr auto accumulate_n(InputIt first, Size n, T init, BinaryOp op)
+    -> std::pair<T, InputIt> {
+  for (; n > 0; --n, ++first) {
+    init = op(std::move(init), *first);
+  }
+  return {init, first};
+}
+#+end_src
+
+The standard library has some ~*_n~ algorithms; it should have more.
+
+#+begin_notes
+Note the principle of useful return here: we also return the iterator we've
+reached.
+
+Basically all the algorithms in the standard library should be available in two
+forms: iterator-pair form and iterator, count form.
+
+This idea is in EoP: some algorithms may be more efficient in the count form or
+may provide more useful building blocks in that form.
+#+end_notes
+
+** Useful reformulations of ~accumulate~
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+#+begin_src c++
+template <class InputIt, class T, class BinaryOp>
+constexpr T accumulate_iter(InputIt first, InputIt last, T init, BinaryOp op) {
+  for (; first != last; ++first) {
+    init = op(std::move(init), first);
+  }
+  return init;
+}
+#+end_src
+
+Pass the iterator to the ~op~ /undereferenced/.
+
+#+begin_notes
+The only difference here from the standard ~accumulate~ is the absence of a ~*~.
+This is a formulation of ~accumulate~ that I used for the code experiments in my
+2016 talk "accumulate: Exploring an Algorithmic Empire".
+
+In C++2014 there were 90 standard algorithms. Using this formulation of
+accumulate and some jiggery-pokery I was able to implement 77 of them.
+#+end_notes
+
+* More Examples
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+Because brains learn by seeing lots of variations.
+
+** Strings
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+ - ~string~
+ - ~operator+~ (concatenation)
+ - empty string
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+Strings form a monoid under concatenation.\\
+The identity is the empty string.
+
+#+begin_notes
+This is sometimes called "the free monoid". Note that it's not commutative. It's
+"free" in the sense that it's the "generic" monoid with only the basic rules and
+no other structure applied.
+#+end_notes
+
+** String-ish applications
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+#+begin_src c++
+std::vector<T> v{1, 2, 3, 4, 5};
+
+std::accumulate(
+    std::cbegin(v), std::cend(v), std::ref(std::cout),
+    [](auto &os, auto &elem) -> decltype(auto) { return os.get() << elem; });
+#+end_src
+
+Here, ~cout~ is acting like the accumulating string.
+
+Compare: range solution with projection function.
+
+** String-ish applications
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+#+begin_src c++
+std::string url_base = "https://example.com/?";
+std::map<std::string, std::string> url_args {{"alpha", "able"},
+                                             {"bravo", "baker"}};
+
+join(std::cbegin(url_args), std::cend(url_args),
+     std::back_inserter(url_base), '&',
+     [] (const auto& p) {
+       const auto& [key, val] = p;
+       return key + '=' + val;
+     });
+#+end_src
+
+We accumulate the query arguments into the url.
 
 * Optional
 
 Make a semigroup into a monoid!
-
-* Strings and vectors
-
-All things concatenation
-
-* Booleans
-
-and, or, xor
 
 * Sets and Maps
 
