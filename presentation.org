@@ -35,7 +35,10 @@
 
 * Introduction
 
-** Let's get this out of the way.
+** Preliminaries
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+Let's get this out of the way.
 
 #+REVEAL_HTML: <div class='vertspace2'></div>
 A monoid is NOT the same thing as a monad.
@@ -529,7 +532,7 @@ monoidal structure of the code becomes a bit clearer, because the range
 machinery provides that lazy conversion.
 #+end_notes
 
-** Animations: a study in composing monoids
+** Animations: a monoidal thought experiment
 
 Consider an animation library.
 
@@ -596,13 +599,17 @@ std::map<std::string, int> total_hours = ...;
 // {"Alice", 80}, {"Bob", 180}, {"Charlie", 70}
 #+end_src
 
+As maps, so (pure) functions.
+
 #+begin_notes
 It's easy to see how to compose maps where the keys are the same.
 
 Notice the importance of the identity here: Alice worked the identity number of
-hours in Feb, Charlie worked the identity number of hours in Jan.
+hours in Feb, Charlie worked the identity number of hours in Jan. If we didn't
+have an identity, this wouldn't work.
 
-If we didn't have an identity, this wouldn't work.
+If we write pure functions, outputs depend only on inputs, so we can think of
+those functions as maps from input type to output type.
 #+end_notes
 
 ** Product types: memberwise monoidal
@@ -640,15 +647,65 @@ the monoid for the profiled time is addition.
 The empty set is usually easy to code.
 
 The universe (all possible sets) is usually more difficult...
+
+One of the applications here is collecting properties, arguments, etc.
 #+end_notes
 
-** Functions
+* Monoidal configuration
 #+REVEAL_HTML: <div class='vertspace2'></div>
-If functions are pure, we can think of them as maps from inputs to outputs.
+Let's look at another common application of several monoidal structures we've seen
+so far.
 
+#+begin_notes
+Let's take a brief aside to look at a more concrete illustration of monoids.
+#+end_notes
+
+** Configuration
 #+REVEAL_HTML: <div class='vertspace2'></div>
-So functions are monoids on their outputs, like maps are monoids on their
-~mapped_type~.
+ - JSON objects
+ - configuration blobs
+ - sets of command-line flags
+ - serialization formats (e.g. Protocol buffers)
+
+#+begin_notes
+All of these things commonly re-invent monoidal structures without really
+realizing it.
+
+We commonly merge these things.
+ - overlaying later, higher priority values on earlier ones (replacement)
+ - concatenating containers of things
+ - recursive merging
+
+These are all monoidal operations. However, the API we present seldom recognizes
+the presence of the monoid or allows us to parameterize it fully.
+#+end_notes
+
+** Protocol Buffers: monoids in disguise
+"Normally, an encoded message would never have more than one instance of a
+non-repeated field. However, parsers are expected to handle the case in which
+they do. For numeric types and strings, if the same field appears multiple
+times, the parser accepts the last value it sees. For embedded message fields,
+the parser merges multiple instances of the same field, as if with the
+~Message::MergeFrom~ method – that is, all singular scalar fields in the latter
+instance replace those in the former, singular embedded messages are merged, and
+repeated fields are concatenated."
+
+https://developers.google.com/protocol-buffers/docs/encoding
+
+#+begin_notes
+Here's the Protobuf description of how merging works - it's a monoid.
+#+end_notes
+
+** Protocol Buffers: monoids in disguise
+"As mentioned above, elements in a message description can be labeled optional.
+... If the default value is not specified for an optional element, a
+type-specific default value is used instead"
+
+https://developers.google.com/protocol-buffers/docs/proto
+
+#+begin_notes
+And here's an example of an identity element.
+#+end_notes
 
 * Code Interlude
 
@@ -686,8 +743,8 @@ This is a surmountable problem. You could use for example traits classes.
 Sometimes, an operation is closed and associative, but really has no identity.
 
 #+REVEAL_HTML: <div class='vertspace2'></div>
-Or, your datatype might not be able to express the identity. (You crafted it
-that way for safety in other areas.)
+Or, your datatype might not be able to express the identity.\\
+(You crafted it that way for safety in other areas.)
 
 #+REVEAL_HTML: <div class='vertspace2'></div>
 What to do?
@@ -719,9 +776,51 @@ auto monoid_op = [](const std::optional<T>& x, const std::optional<T>& y)
 };
 #+end_src
 
-* Sets and Maps
+* Monoidal statistics
+#+REVEAL_HTML: <div class='vertspace2'></div>
+Computation of statistics is almost always monoidal.
 
-Monoids on their value types
+#+REVEAL_HTML: <div class='vertspace2'></div>
+Recognizing and exploiting monoidal properties allows us to scale massively.
+
+** Simply summing (counting) things
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+[[./distributed_count1.svg]]
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+Monoids are closed.
+
+#+begin_notes
+The property of being closed is the key to using bounded space.
+#+end_notes
+
+
+** Simply summing (counting) things
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+[[./distributed_count2.svg]]
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+Monoids are associative.
+
+#+begin_notes
+The property of associativity is the key to distribution.
+#+end_notes
+
+
+** Simply summing (counting) things
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+[[./distributed_count3.svg]]
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+Monoids have an identity.
+
+#+begin_notes
+The existence of an identity is the key to flexibility in management.
+#+end_notes
+
 
 * Structs, pairs and tuples
 
