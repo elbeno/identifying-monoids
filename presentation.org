@@ -37,6 +37,7 @@
 
 ** Let's get this out of the way.
 
+#+REVEAL_HTML: <div class='vertspace2'></div>
 A monoid is NOT the same thing as a monad.
 
 #+begin_notes
@@ -173,6 +174,11 @@ Before I show examples, here is some context to understand them.
 #+REVEAL_HTML: operations -- I think is one of the single biggest things<br>
 #+REVEAL_HTML: you can do to help users of your library.&quot;</p>
 #+REVEAL_HTML: <div></div><div class='author'>-- me, <em>Easy to Use, Hard to Misuse: Declarative Style in C++</em></div></blockquote>
+
+#+begin_notes
+It's also one of the best things you can do to help your own thinking about
+library architecture and the macro structure of your code.
+#+end_notes
 
 ** Why is it important to recognize them?
 
@@ -323,14 +329,14 @@ Mirror situations apply for dealing with negative numbers.
  \( \left \{ \{true, false\}, \land, true \right \} \)
 #+begin_src c++
 template <typename... Args>
-bool all(Args... args) { return (... && args); }
+bool all(Args&&... args) { return (... && args); }
 #+end_src
 
 #+REVEAL_HTML: <div class='vertspace2'></div>
  \( \left \{ \{true, false\}, \lor, false \right \} \)
 #+begin_src c++
 template <typename... Args>
-bool any(Args... args) { return (... || args); }
+bool any(Args&&... args) { return (... || args); }
 #+end_src
 
 #+begin_notes
@@ -384,7 +390,9 @@ Suspect a monoid whenever you find yourself using the following algorithms:
  - (therefore also ~find~ and friends)
  - ~min_element~, ~max_element~, ~minmax_element~
  - ~count~, ~count_if~
- - ~equal~
+
+#+begin_notes
+#+end_notes
 
 ** Useful reformulations of ~accumulate~
 #+REVEAL_HTML: <div class='vertspace2'></div>
@@ -411,6 +419,9 @@ forms: iterator-pair form and iterator, count form.
 
 This idea is in EoP: some algorithms may be more efficient in the count form or
 may provide more useful building blocks in that form.
+
+I've used this in sliding-window type calculations, where you know the size of
+the window.
 #+end_notes
 
 ** Useful reformulations of ~accumulate~
@@ -472,7 +483,15 @@ std::accumulate(
 
 Here, ~cout~ is acting like the accumulating string.
 
-Compare: range solution with projection function.
+#+begin_notes
+The actual code is making some concessions to performance. We can't just write
+(string + string + string...) because we don't have efficient ways to look
+through the copying of strings.
+
+But I like to think about this in a way that highlights the monoidal structure.
+What's really happening is that we're using a projection function on elements to
+turn them into strings, and then we're accumulating a string in the world.
+#+end_notes
 
 ** String-ish applications
 #+REVEAL_HTML: <div class='vertspace2'></div>
@@ -492,9 +511,213 @@ join(std::cbegin(url_args), std::cend(url_args),
 
 We accumulate the query arguments into the url.
 
-* Optional
+** Joining string-ish things
 
-Make a semigroup into a monoid!
+#+begin_src c++
+template <typename InputIt, typename OutputIt, typename T, typename Projection>
+OutputIt join(InputIt first, InputIt last,
+              OutputIt dest,
+              const T& delimiter,
+              Projection&& proj);
+#+end_src
+
+See also: ~std::experimental::ostream_joiner~, ~ranges::view::join~.
+
+#+begin_notes
+With ranges we can also pipe through a projection function quite easily. The
+monoidal structure of the code becomes a bit clearer, because the range
+machinery provides that lazy conversion.
+#+end_notes
+
+** Animations: a study in composing monoids
+
+Consider an animation library.
+
+What is an animation?
+ - a series of keyframes?
+ - a series of blends (curves?) between them?
+ - a function from time to position?
+
+How can we compose animations?
+ - by pointwise operation
+ - by sequencing
+
+#+begin_notes
+Let's take what we've seen so far and do a thought experiment: how could we
+design API elements for an animation library?
+
+Think about 1D animation to make it simple.
+
+Compose by operation: any monoidal operation! Recall: recognize monoids by
+thinking about what the identity is. (In this case the same-length animation
+that is all "zeroes").
+
+Compose by sequencing: like a string. Again, the identity is the zero-length
+animation.
+#+end_notes
+
+* Going further
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+We've seen:
+ - "primitive" monoids (on "number-like" things)
+ - the free monoid (concatenation)
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+Let's look at composition.
+
+** Containers
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+[[./pointwise_vector.svg]]
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+A container is a monoid on its ~value_type~.
+
+#+begin_notes
+Imagine having two maps that you want to combine.
+
+In the first map, a key has a given value. In the second map, the same key has
+another value. To combine the maps, we can apply the monoid operation on the two
+values to get the resultant mapped value in the output.
+#+end_notes
+
+** Maps
+#+REVEAL_HTML: <div class='vertspace2'></div>
+A ~map~ is a monoid on its ~mapped_type~.
+
+#+begin_src c++
+std::map<std::string, int> jan_hours{{"Alice", 80},
+                                     {"Bob", 90}};
+std::map<std::string, int> feb_hours{{"Bob", 90},
+                                     {"Charlie", 70}};
+
+std::map<std::string, int> total_hours = ...;
+// {"Alice", 80}, {"Bob", 180}, {"Charlie", 70}
+#+end_src
+
+#+begin_notes
+It's easy to see how to compose maps where the keys are the same.
+
+Notice the importance of the identity here: Alice worked the identity number of
+hours in Feb, Charlie worked the identity number of hours in Jan.
+
+If we didn't have an identity, this wouldn't work.
+#+end_notes
+
+** Product types: memberwise monoidal
+#+REVEAL_HTML: <div class='vertspace2'></div>
+~struct~, ~pair~, ~tuple~
+
+#+begin_src c++
+using modulus_t = double;
+using argument_t = double;
+using polar_complex_number_t = std::pair<modulus_t, argument_t>;
+
+using computation_t = auto (*) (int) -> int;
+using profile_data_t = std::pair<computation_t, chrono::nanoseconds>;
+#+end_src
+
+#+begin_notes
+Two examples here: the first shows a pair of the same type where the monoidal
+operation is different. (Consider complex number multiplication.)
+
+The second shows two differenty types, so necessarily the monoids are different.
+Here the monoid for the function could be composition (more on that later), and
+the monoid for the profiled time is addition.
+#+end_notes
+
+** Sets
+#+REVEAL_HTML: <div class='vertspace2'></div>
+(Mathematical) sets are monoidal in another way: by intersection and union.
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+\( \left \{ \{sets\}, \cup, \varnothing \right \} \)
+
+\( \left \{ \{sets\}, \cap, \mathbb{U} \right \} \)
+
+#+begin_notes
+The empty set is usually easy to code.
+
+The universe (all possible sets) is usually more difficult...
+#+end_notes
+
+** Functions
+#+REVEAL_HTML: <div class='vertspace2'></div>
+If functions are pure, we can think of them as maps from inputs to outputs.
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+So functions are monoids on their outputs, like maps are monoids on their
+~mapped_type~.
+
+* Code Interlude
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+Identity problems.
+
+** Value type problems
+#+REVEAL_HTML: <div class='vertspace2'></div>
+Usually we would want an identity to be provided by a type's default
+constructor.
+
+But sometimes, there is no good identity.
+
+#+begin_src c++
+struct color { ... };
+#+end_src
+
+Usually for one of two reasons:
+ - real-world values don't have defaults
+ - different identities are required for different operations
+
+#+begin_notes
+Often occurs in values representing things in the real world.
+
+Clue to this: no good value choice for a default constructor.
+
+Or: identity depends on operation, and default construction only has one
+implementation.
+
+This is a surmountable problem. You could use for example traits classes.
+#+end_notes
+
+** Identity problems
+#+REVEAL_HTML: <div class='vertspace2'></div>
+Sometimes, an operation is closed and associative, but really has no identity.
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+Or, your datatype might not be able to express the identity. (You crafted it
+that way for safety in other areas.)
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+What to do?
+
+#+begin_notes
+This is a more serious problem. The second case is perhaps more likely.
+
+We generally want to use strong types safely. It is often the case that an
+identity is some kind of sentinel value like a null pointer or an empty string,
+and you don't want to deal with it in most of the code.
+
+Sometimes you just want to use that identity value in one place where you want
+the monoidal property.
+#+end_notes
+
+** ~std::optional~ to the rescue
+#+REVEAL_HTML: <div class='vertspace2'></div>
+Providing a sentinel value that you can use as an identity is what
+~std::optional~ does.
+
+#+begin_src c++
+template <typename Operation, typename T>
+auto monoid_op = [](const std::optional<T>& x, const std::optional<T>& y)
+    -> std::optional<T> {
+  if (x == std::nullopt) return y;
+  if (y == std::nullopt) return x;
+
+  return Operation{}(*x, *y);
+};
+#+end_src
 
 * Sets and Maps
 
