@@ -694,6 +694,11 @@ https://developers.google.com/protocol-buffers/docs/encoding
 
 #+begin_notes
 Here's the Protobuf description of how merging works - it's a monoid.
+
+In fact it's a couple of monoids. The set union monoid is here, and so is the
+last monoid (right-biased replacement).
+
+And the monoids are composed together.
 #+end_notes
 
 ** Protocol Buffers: monoids in disguise
@@ -781,7 +786,8 @@ auto monoid_op = [](const std::optional<T>& x, const std::optional<T>& y)
 Computation of statistics is almost always monoidal.
 
 #+REVEAL_HTML: <div class='vertspace2'></div>
-Recognizing and exploiting monoidal properties allows us to scale massively.
+Recognizing and exploiting monoidal properties allows us to distribute
+computations.
 
 ** Simply summing (counting) things
 #+REVEAL_HTML: <div class='vertspace2'></div>
@@ -799,13 +805,31 @@ The property of being closed is the key to using bounded space.
 ** Simply summing (counting) things
 #+REVEAL_HTML: <div class='vertspace2'></div>
 
-[[./distributed_count2.svg]]
+[[./distributed_count2a.svg]]
 
 #+REVEAL_HTML: <div class='vertspace2'></div>
 Monoids are associative.
 
 #+begin_notes
 The property of associativity is the key to distribution.
+
+This is distribution over hardware...
+#+end_notes
+
+
+** Simply summing (counting) things
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+[[./distributed_count2b.svg]]
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+Monoids are associative.
+
+#+begin_notes
+... and here is distribution over time.
+
+If we keep the sums at each level of the tree here then we can query any time
+period in logarithmic time.
 #+end_notes
 
 
@@ -819,20 +843,240 @@ Monoids have an identity.
 
 #+begin_notes
 The existence of an identity is the key to flexibility in management.
+
+Zeroes don't matter => it doesn't matter
 #+end_notes
 
 
-* Structs, pairs and tuples
+** A few statistical monoids
+#+REVEAL_HTML: <div class='vertspace2'></div>
 
-Product types are monoidal if their constituents are
-This is useful for accumulating effects
-cf. Writer monad
-http://blog.sigfpe.com/2009/01/haskell-monoids-and-their-uses.html
+#+ATTR_REVEAL: :frag (appear)
+ - max and min
+ - top N
+ - mean
+ - histogram
 
-* Functions
+#+begin_notes
+Max and min are obvious.
 
-Monoidal on their outputs
-cf. maps
+Top N is an easy extension of max/min (i.e. top 1).
+
+Mean is easy too: one way to do it is store the sum and count.
+
+We can imagine how histogram works: it's basically a vector of counts, and we
+know how to sum that pointwise.
+
+All of these are composable. We could have a histogram of top Ns, or top N
+averages, etc.
+#+end_notes
+
+
+** Fantastic (Monoidal) Algorithms
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+Micholas Ormrod's 2017 CppCon talk "Fantastic Algorithms and Where to Find Them".
+
+https://www.youtube.com/watch?v=YA-nB2wjVcI
+
+ - Heavy hitters
+ - Reservoir sampling
+ - HyperLogLog
+
+These all have monoidal structure.
+
+#+begin_notes
+These are probabilistic algorithms.
+
+They work by keeping relatively small amounts of state, that we know how to
+combine with a monoid operation. This is the key to their distribution.
+#+end_notes
+
+
+** HyperLogLog
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+Intuition for HyperLogLog
+
+[[./hyperloglog.svg]]
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+ - we have an ideal hash function
+ - we've seen N items
+ - the expected "inter-hash" value is \( E(e) = \frac{1}{N+1} \)
+ - therefore the expected min value is \( E(e) = \frac{1}{N+1} \)
+ - we can recover N from \( \frac{1}{e} - 1 \)
+
+#+begin_notes
+This is basically the intuition for HyperLogLog: an ideal hash function is like
+a uniformly distributed RNG.
+
+Like all probabilistic algorithms, if you spend more CPU and/or more memory, you
+can bound your error more tightly.
+
+In the case of HLL, this means using tricks to effectively compute several
+different hashes and store multiple minima in a vector. We do this on several
+machines, and we know how to combine these vectors monoidally.
+
+At a very modest cost we can count billions of uniques with say 99% accuracy.
+#+end_notes
+
+
+** Count-Min Sketch
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+Intuition for Count-Min Sketch
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+#+attr_html: :width 600px
+[[./count-min_sketch1.svg]]
+
+insert(Alice)
+
+#+begin_notes
+With count-min sketch, we're keeping frequencies for each thing we've seen.
+
+Conceptually, we use several hash functions.
+
+It's similar to a bloom filter.
+#+end_notes
+
+
+** Count-Min Sketch
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+Intuition for Count-Min Sketch
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+#+attr_html: :width 600px
+[[./count-min_sketch2.svg]]
+
+insert(Bob)
+
+#+begin_notes
+Bob collides with Alice, but only on one of the hash functions.
+#+end_notes
+
+
+** Count-Min Sketch
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+Intuition for Count-Min Sketch
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+#+attr_html: :width 600px
+[[./count-min_sketch3.svg]]
+
+insert(Alice)
+
+#+begin_notes
+Later on, we see Alice again, and increment the values at each of the hash
+positions.
+#+end_notes
+
+** Count-Min Sketch
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+Intuition for Count-Min Sketch
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+#+attr_html: :width 600px
+[[./count-min_sketch4.svg]]
+
+how_many(Alice)?
+
+#+begin_notes
+Now we can ask, how many times have we seen Alice?
+
+The min value of the hashes gives us an upper bound.
+
+Once again, this is a monoid. In fact, it's a full abelian group. It's
+commutative and it has an inverse - we know how to "erase" one of the times
+we've seen Alice.
+#+end_notes
+
+** Monoidal Structure of Distributed Stats
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+Monoids pervade distributed computations, especially statistics.
+
+ - closedness gives us bounded space
+ - associativity unlocks the ability to stripe across hardware/time
+ - identity value helps with ops
+
+See also: Avi Bryant, /Add ALL the Things/ (Strange Loop 2013) \\
+https://www.infoq.com/presentations/abstract-algebra-analytics
+
+
+* Incremental Computation
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+Let's talk about processes evolving in time.
+
+** Function composition is a monoid
+#+REVEAL_HTML: <div class='vertspace2'></div>
+We already saw an example of this...
+
+#+begin_src c++
+using computation_t = auto (*) (int) -> int;
+using profile_data_t = std::pair<computation_t, chrono::nanoseconds>;
+#+end_src
+
+#+begin_src c++
+using a_to_b = auto (*) (A) -> B;
+using b_to_c = auto (*) (B) -> C;
+#+end_src
+
+#+begin_notes
+Function composition is associative. It's closed.
+What is the identity here? The identity function of course.
+
+For now let's just restrict ourselves to thinking about functions from A to A.
+(Endofunctions).
+#+end_notes
+
+** ~std::iota~
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+#+begin_src c++
+template<class ForwardIt, class T>
+void iota(ForwardIt first, ForwardIt last, T value)
+{
+    while(first != last) {
+        *first++ = value;
+        ++value;
+    }
+}
+#+end_src
+
+A monoid lurks.
+
+#+begin_notes
+What iota is actually doing is repeatedly adding 1.
+
+What if we abstract that functionality a bit more?
+#+end_notes
+
+
+** ~nonstd::iterate~
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+#+begin_src c++
+template<class ForwardIt, class T, class Endo>
+constexpr void iterate(ForwardIt first, ForwardIt last, T init, Endo f)
+{
+    while (first != last) {
+        *first++ = init;
+        init = f(std::move(init));
+    }
+}
+// and of course iterate_n similarly
+
+constexpr auto iota = [] (auto first, auto last, auto value) {
+  iterate(first, last, value, [] (auto i) { return i + 1; });
+};
+#+end_src
+
 
 * Tree structures
 
