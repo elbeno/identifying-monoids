@@ -1,14 +1,56 @@
 #include <algorithm>
-#include <array>
-#include <cstddef>
+#include <cstdlib>
+#include <functional>
 #include <iostream>
 #include <iterator>
+#include <numeric>
 #include <random>
 #include <type_traits>
+#include <utility>
+#include <vector>
+
+namespace nonstd {
+template <class ForwardIt, class T, class EndoFunction>
+constexpr auto iterate(ForwardIt first, ForwardIt last, T init,
+                       EndoFunction f) {
+  while (first != last) {
+    *first++ = init;
+    init = f(std::move(init));
+  }
+  return init;
+}
+
+template <class ForwardIt, class T, class Size, class EndoFunction>
+constexpr auto iterate_n(ForwardIt first, Size n, T &&init, EndoFunction f) {
+  while (n--) {
+    *first++ = init;
+    init = f(std::move(init));
+  }
+  return init;
+}
+
+template <class InputIt, class Size, class T, class BinaryOp>
+constexpr auto accumulate_n(InputIt first, Size n, T init, BinaryOp op)
+    -> std::pair<T, InputIt> {
+  for (; n > 0; --n, ++first) {
+    init = op(std::move(init), *first);
+  }
+  return {init, first};
+}
+} // namespace nonstd
+
+template <typename ForwardIt, typename T, typename Proj>
+decltype(auto) fold_print(ForwardIt first, ForwardIt last, T init, Proj f) {
+  return std::accumulate(first, last, std::ref(std::cout << init),
+                         [&](auto &os, auto &elem) -> decltype(auto) {
+                           return os.get() << f(elem);
+                         })
+      .get();
+}
 
 static int next_set_id = 0;
 struct cell {
-  int set_id{};
+  int set_id{next_set_id++};
   bool connected_east{};
   bool connected_south{};
 };
@@ -20,24 +62,15 @@ auto merge_cells = [](auto old_id, auto new_id, auto first, auto last) {
   });
 };
 
-auto print_row_north_edges = [](std::size_t cols) {
-  std::cout << '+';
-  for (; cols > 0; --cols) {
-    std::cout << "--+";
-  }
-  std::cout << '\n';
+auto print_row_north_edges = [](const auto &row) {
+  fold_print(std::cbegin(row), std::cend(row), '+', [](auto) { return "--+"; })
+      << '\n';
 };
 
 auto print_row_east_edges = [](const auto &row) {
-  std::cout << '|';
-  for (const auto &cell : row) {
-    if (not cell.connected_east) {
-      std::cout << "  |";
-    } else {
-      std::cout << "   ";
-    }
-  }
-  std::cout << '\n';
+  fold_print(std::cbegin(row), std::cend(row), '|', [](auto &cell) {
+    return cell.connected_east ? "   " : "  |";
+  }) << '\n';
 };
 
 auto print_row_south_edges = [](const auto &row) {
@@ -104,15 +137,14 @@ auto randomly_carve_south = [](auto &row) {
   }
 };
 
-auto next_row = [](auto &row) {
-  std::remove_reference_t<decltype(row)> new_row{};
-  for (auto i = 0u; i < std::size(row); ++i) {
-    if (row[i].connected_south) {
-      new_row[i].set_id = row[i].set_id;
-    } else {
-      new_row[i].set_id = next_set_id++;
+auto next_row = [](auto &&row) {
+  auto new_row = std::forward<decltype(row)>(row);
+  std::for_each(std::begin(new_row), std::end(new_row), [](auto &cell) {
+    cell.connected_east = false;
+    if (not std::exchange(cell.connected_south, false)) {
+      cell.set_id = next_set_id++;
     }
-  }
+  });
   return new_row;
 };
 
@@ -126,24 +158,36 @@ auto last_carve_east = [](auto &row) {
   }
 };
 
-int main() {
-  constexpr std::size_t num_cols = 15;
-  constexpr std::size_t num_rows = 15;
+struct printer {
+  printer &operator*() { return *this; }
+  printer &operator++() { return *this; }
+  printer &operator++(int) { return *this; }
 
-  std::array<cell, num_cols> row{};
-  print_row_north_edges(std::size(row));
+  template <typename T> printer &operator=(const T &t) {
+    print_row_east_edges(t);
+    print_row_south_edges(t);
+    return *this;
+  };
+};
 
-  for (int i = 0; i < num_rows - 1; ++i) {
-    auto new_row = next_row(row);
-    row.swap(new_row);
-    randomly_carve_east(row);
-    randomly_carve_south(row);
-    print_row_east_edges(row);
-    print_row_south_edges(row);
-  }
-  auto new_row = next_row(row);
-  row.swap(new_row);
+int main(int argc, char *argv[]) {
+  std::size_t num_rows = std::atoi(argv[1]);
+  std::size_t num_cols = std::atoi(argv[2]);
+
+  std::vector<cell> row{num_cols};
+  print_row_north_edges(row);
+  randomly_carve_east(row);
+  randomly_carve_south(row);
+
+  row = nonstd::iterate_n(
+      printer{}, num_rows - 1, std::move(row), [&](auto &&current) {
+        auto next = next_row(std::forward<decltype(current)>(current));
+        randomly_carve_east(next);
+        randomly_carve_south(next);
+        return next;
+      });
+
   last_carve_east(row);
   print_row_east_edges(row);
-  print_row_north_edges(std::size(row));
+  print_row_north_edges(row);
 }

@@ -781,6 +781,15 @@ auto monoid_op = [](const std::optional<T>& x, const std::optional<T>& y)
 };
 #+end_src
 
+** ~std::optional~ as a Monoid
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+If ~T~ is a semigroup, then ~std::optional<T>~ is a monoid.
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+Note: a monoid is a semigroup.
+
+
 * Monoidal statistics
 #+REVEAL_HTML: <div class='vertspace2'></div>
 Computation of statistics is almost always monoidal.
@@ -1052,18 +1061,59 @@ void iota(ForwardIt first, ForwardIt last, T value)
 A monoid lurks.
 
 #+begin_notes
-What iota is actually doing is repeatedly adding 1.
-
-What if we abstract that functionality a bit more?
+There is a lurking monoid here... let's try to write ~iota~ as an accumulate.
 #+end_notes
 
+** ~nonstd::iota~
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+#+begin_src c++
+template <typename ForwardIt, typename T>
+void iota(ForwardIt first, ForwardIt last, T value) {
+  std::accumulate(first, last, value, [](const auto &so_far, auto &next) {
+    next = so_far;
+    return so_far + 1;
+  });
+}
+#+end_src
+
+The structure revealed.
+
+#+begin_notes
+OK, so it's clearly a fold.
+
+Actually ~std::accumulate~ musn't modify any of the elements of the range, and
+here we're breaking that rule, so this is technically UB. But it's just an
+engineering choice - we could trivially use our own version of accumulate (or
+the ~accumulate_iter~ that we saw earlier).
+
+Anyway, writing it this way abstracts the actual "+1" from the computational
+structure.
+#+end_notes
+
+** ~nonstd::iota~
+#+REVEAL_HTML: <div class='vertspace2'></div>
+#+begin_src c++
+template <typename ForwardIt, typename T, typename UnaryFunction>
+void iota(ForwardIt first, ForwardIt last, T value, UnaryFunction f) {
+  std::accumulate(first, last, value, [&](auto &so_far, auto &next) {
+    next = so_far;
+    return f(so_far);
+  });
+}
+#+end_src
+
+#+begin_notes
+Once we separate the structure of the loop from what's actually happening to the
+elements, it's easy to pull out the "+1" and have it be anything we want it to be.
+#+end_notes
 
 ** ~nonstd::iterate~
 #+REVEAL_HTML: <div class='vertspace2'></div>
 
 #+begin_src c++
-template<class ForwardIt, class T, class Endo>
-constexpr void iterate(ForwardIt first, ForwardIt last, T init, Endo f)
+template<class ForwardIt, class T, class EndoFunction>
+constexpr void iterate(ForwardIt first, ForwardIt last, T init, EndoFunction f)
 {
     while (first != last) {
         *first++ = init;
@@ -1077,8 +1127,263 @@ constexpr auto iota = [] (auto first, auto last, auto value) {
 };
 #+end_src
 
+#+begin_notes
+And now we see iota revealed for what it really is: sometimes called an unfold.
 
-* Tree structures
+`iterate` is a function that we don't have in the standard library, but it would
+be really useful.
+#+end_notes
+
+* Endofunctions and Procedural generation
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+Putting ~nonstd::iterate~ to work.
+
+#+begin_notes
+Endofunctions go hand-in-glove with procedural generation.
+#+end_notes
+
+
+** Maze generation
+#+REVEAL_HTML: <div class='vertspace2'></div>
+You probably know a few algorithms for maze generation.
+
+ - Recursive backtracking
+ - Prim's
+ - Kruskal's
+ - Aldous-Broder
+ - Binary tree
+ - Hunt-and-kill
+ - Wilson's
+ - Sidewinder
+ - Eller's
+
+#+begin_notes
+Let's take maze generation as a simple example here. There are lots of different
+algorithms for generating a minimum spanning tree, aka a maze.
+
+You can look these up and implement them at your leisure. I'm just going to use
+the last one as my example.
+
+Eller's algorithm has a particular feature. Consider a simple 2D square maze.
+Eller's algo generates the maze row by row, generating the next row from the
+last one.
+#+end_notes
+
+** Eller's algorithm
+#+REVEAL_HTML: <div class='vertspace2'></div>
+Start with a row of unlinked cells, all in different sets
+
+Then, given a row:
+ - randomly link (east-west) adjacent cells from different sets, merge their sets
+ - randomly link south at least once from each set of cells
+ - any cells in the next row that were not linked from the north get new sets
+
+To finish, link (east-west) all cells from different sets.
+
+** Demo
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+Eller's algorithm: ~nonstd::iterate_n~ in action.
+
+
+* Monoid Homomorphisms
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+"A 25-dollar term for a 5-cent concept"
+
+(thanks Kris)
+
+** Changing one monoid into another
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+A /monoid homomorphism/ changes one monoid into another, e.g.
+
+
+ - Strings form a monoid under concatenation
+
+ - Integers form a monoid under addition
+
+~string::length~ is a monoid homomorphism
+
+ - the identity is preserved (empty string has length zero)
+ - general structure is preserved
+ - the monoids are different
+
+** We do this all the time
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+It's very common that we do calculations in different spaces.
+
+ - easier to think about
+ - easier to calculate
+
+#+begin_src c
+main(n){float r,i,R,I,b;for(i=-1;i<1;i+=.06,puts(""))for(r=-2;I=i,(R=r)<1;
+r+=.03,putchar(n+31))for(n=0;b=I*I,26>n++&&R*R+b<4;I=2*R*I+i,R=R*R-b+r);}
+#+end_src
+
+#+begin_notes
+No reason to do a sqrt here.
+
+Often times, we're using a monoid homomorphism.
+
+See also:
+ - dot product angle calculations (no need for inverse cosine)
+ - logarithms (turn multiplication into addition)
+ - fourier/laplace transforms (turn differential eqns into algebraic eqns)
+#+end_notes
+
+** Example
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+What's the best way to compute a fibonacci number?
+
+#+begin_notes
+I'm sure you know this one.
+#+end_notes
+
+** Fibonacci
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+The fibonacci sequence is a function:
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+\( \{fib_{n-1}, fib_n\} \rightarrow \{fib_n, fib_{n+1}\} \)
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+#+begin_src c++
+using fib = auto (*)(std::pair<int, int>) -> std::pair<int, int>;
+#+end_src
+
+#+begin_notes
+The fib sequence is a linear recurrence relation, which means we can model it
+with a matrix that we raise to a power to compute the nth term.
+
+What do we get out of this?
+
+Function composition is a monoid, but we're stuck with computing it in linear
+time, because we can't easily compute compositions of functions.
+
+We transform that monoid into matrix multiplication - and we know how to
+do that in logarithmic time.
+#+end_notes
+
+** Another example
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+A linear congruential PRNG is a function:
+
+\( x_{n+1} = (ax_n + b) \mod m \)
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+Can we apply a similar transformation?
+
+#+begin_notes
+Like fibonacci, we can't do function composition in sublinear time.
+
+But this is basically a monoid, and basically multiply with a bit of other stuff.
+#+end_notes
+
+** PRNG applications
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+#+begin_src c++
+std::linear_congruential_engine::discard(unsigned long long z);
+#+end_src
+"Advances the internal state by ~z~ times. Equivalent to calling ~operator()~
+~z~ times and discarding the result."
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+#+ATTR_REVEAL: :frag appear
+"For some engines, "fast jump" algorithms are known"
+
+#+begin_notes
+This could be useful in a few situations.
+
+One example could be something like a particle system simulation that has
+minimal state and spews out particles randomly. You could restore the state of
+that system at an arbitrary point in time by fast-forwarding the RNG, and
+assuming the particles produced have a maximum lifetime, you only need to
+simulate a few frames to recover the complete state.
+#+end_notes
+
+** Logarithmic skipahead
+#+begin_src c++
+auto skip_rand = [](std::uint32_t x, int n) -> std::uint32_t {
+  std::uint64_t G = x;
+  std::uint64_t C = 0;
+  {
+    auto c = B;
+    auto h = A;
+    auto f = B;
+    while (n > 0) {
+      if (n & 1) {
+        G = (G * h) % M;
+        C = (C * h + f) % M;
+      }
+      f = (f * (h + 1)) % M;
+      h = (h * h) % M;
+      n >>= 1;
+    }
+  }
+  return G + C;
+};
+#+end_src
+
+#+begin_notes
+Somewhat surprisingly this technique is not in libstdc++ or libc++.
+There, ~discard~ does the obvious linear thing.
+#+end_notes
+
+** Fast discard
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+Modular exponentiation
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+/Random Number Generation with Arbitrary Strides/ -- Forrest B. Brown \\
+https://laws.lanl.gov/vhosts/mcnp.lanl.gov/pdf_files/anl-rn-arb-stride.pdf
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+Also applies to other RNGs e.g.
+ - PCG http://www.pcg-random.org/useful-features.html#jump-ahead-and-jump-back
+ - xorshift https://arxiv.org/pdf/1404.0390.pdf
+
+#+begin_notes
+Maybe we didn't need to think in terms of monoids here, because we're used to
+plain old arithmetic.
+
+But thinking about the structure of the calculation in general can clue us in to
+whether or not it's possible to transform it, and what are the likely gains if
+we can.
+#+end_notes
+
+* Even more on monoids
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+Things I don't have time to go into fully, \\
+left as an exercise for the viewer.
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+When you start looking for monoids, they crop up /everywhere/.
+
+** ಠ_ಠ
+#+REVEAL_HTML: <div class='vertspace2'></div>
+#+begin_src c++
+template <class InputIt, class T, class BinaryOp>
+T reduce(InputIt first, InputIt last, T init, BinaryOp binary_op);
+#+end_src
+"The behavior is non-deterministic if binary_op is not associative /or not
+commutative./"
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+Data-level parallelism at war with function-level parallelism...
+
+
+** Folding over tree structures
+#+REVEAL_HTML: <div class='vertspace2'></div>
 
 "Normal" monoids have two operations:
  - one for combining with identity
@@ -1087,19 +1392,136 @@ constexpr auto iota = [] (auto first, auto last, auto value) {
 If we look at a tree structure as a sum type, we can extend this to:
  - one for combining each type of value
 
-And we can run functions over tree structures, accumulating the values. Just
-like std::accumulate, this gives us the power to separate the meaning of what
-we're doing from the control flow of how we're doing it.
+#+REVEAL_HTML: <div class='vertspace2'></div>
+/std::accumulate: Exploring an Algorithmic Empire/ \\
+https://www.youtube.com/watch?v=B6twozNPUoA
 
-Most of the algorithms in the STL deal with linear sequences. And that's most of
-what we handle. But quite often we handle treelike structures. It's much more
-likely then that we'll fail to see the essential computation that's going on and
-fall back on a raw loop because we think algorithms can't deal with what we're
-doing. If we think in terms of monoids, we can get that separation of control
-flow from logic and we can often use an accumulate-like algorithm to separate
-the control flow.
+#+begin_notes
+Quite often we handle treelike structures. It's much more likely then that we'll
+fail to see the essential computation that's going on and fall back on a raw
+loop because we think algorithms can't deal with what we're doing. If we think
+in terms of monoids, we can get that separation of control flow from logic and
+we can often use an accumulate-like algorithm to achieve that.
+#+end_notes
 
-* Endofunctions
+** Futures as monoids
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+No, not as monads. Not today.
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+Futures form a monoid with the "race" operation. (~when_any~)
+ - (A 'race' B) 'race' C == A 'race' (B 'race' C)
+ - the identity is ~never~ (the future that never completes)
+
+#+begin_notes
+This could be useful for example for modelling cancellation. Imagine "racing" a
+computation against a UI element that completes its future when the user hits
+cancel...
+#+end_notes
+
+** Parsers as monoids
+#+REVEAL_HTML: <div class='vertspace2'></div>
+You remember:
+
+"A parser for things is a function from strings to lists of pairs of things and
+strings."
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+Parsers form a monoid under alternation.
+ - (A | B) | C == A | (B | C)
+ - the identity is the parser that always fails
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+/~constexpr~ ALL the things!/ \\
+https://www.youtube.com/watch?v=HMB9oXFobJc
+
+#+begin_notes
+Jason and I used this in our 2017 talk, with a parser combinator approach to
+building compile-time UDLs.
+
+Alternation can be used to provide error messages (the identity parser) in such
+a scheme.
+#+end_notes
+
+** Training sets as monoids
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+You have a large set of data to train on.
+
+Maybe you have a monoid.
+
+Train on large set => produce distribution.
+
+Train on incremental data => produce distribution.
+
+Can you combine the distributions monoidally?
+
+https://izbicki.me/blog/gausian-distributions-are-monoids.html
+
+
+#+begin_notes
+I know very little about machine learning, but I'm sure monoids apply.
+
+Recall: one of the things that monoids unlock is distributed computation. When
+you're running across very large data sets that is invaluable.
+#+end_notes
+
+** Incremental regular expression matching with monoids
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+You have:
+ - a regular expression
+ - a string to match
+
+Perform the match once, then edit the string.
+
+How expensive is performing a second match?
+
+http://blog.sigfpe.com/2009/01/fast-incremental-regular-expression.html
+
+#+begin_notes
+Monoids give you incremental computation.
+
+Dan Piponi wrote about this on his blog.
+"You can do this in C++, say, using mutable red-black trees."
+#+end_notes
+
+** How to impress Haskell programmers
+#+REVEAL_HTML: <div class='vertspace2'></div>
+Play The Monoid Game...
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+You: "X is a monoid!"
+
+Haskeller, impressed: "Ooh, you mean in the sense of [FP stuff]?"
+
+You: "Up to isomorphism, yes."
+
+#+begin_notes
+This works because /literally everything/ is a monoid under some interpretation.
+#+end_notes
+
+* Final thoughts
+#+REVEAL_HTML: <div class='vertspace2'></div>
+ - thinking about structure helps to separate control flow from logic
+ - monoids are a ubiquitous pattern for doing that
+ - try to think beyond just numerics
+ - added benefit: distributed and/or incremental computation
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+#+REVEAL_HTML: <blockquote nil><p>&quot;Discovery consists of seeing what everybody<br>
+#+REVEAL_HTML: has seen, and thinking what nobody has thought.&quot;</p>
+#+REVEAL_HTML: <div></div><div class='author'>-- Albert Szent-Györgyi (Nobel Laureate in Medicine, 1937)</div></blockquote>
+
+#+begin_notes
+I hope that after this talk you can look at your code in a new way and think
+what you have not thought before.
+#+end_notes
+
+
+* Notes                                                            :noexport:
+** Endofunctions
 
 Functions from A to A
 Processes evolving in time
@@ -1123,26 +1545,26 @@ https://meetingcpp.com/blog/items/ranges-for-numerical-problems-402.html
 https://www.youtube.com/watch?v=13r9QY6cmjc
 http://people.math.gatech.edu/~ecroot/recurrence_notes2.pdf
 
-* Futures
+** Futures
 
 when_any and never
 UI applications
 
-* Stronger than monoids
+** Stronger than monoids
 Commutativity
 Existence of an inverse
 
-* Accumulate vs reduce
+** Accumulate vs reduce
 
 Reduce requires commutativity for vectorization
 Data-level parallelism at war with function-level parallelism
 (parallelism vs concurrency)
 
-* Balanced reduction
+** Balanced reduction
 
-* Incremental computation
+** Incremental computation
 
-* Bigger applications
+** Bigger applications
 
 ** Serialization
 Monoid-like, but with varying types
@@ -1246,7 +1668,7 @@ http://blog.sigfpe.com/2009/01/fast-incremental-regular-expression.html
 ** Diagrams
 
 
-* My favourite quote
+** My favourite quote
 
 "Discovery consists of seeing what everybody has seen, and thinking what nobody
 has thought."
@@ -1258,6 +1680,6 @@ I hope that after this talk you can look at your code in a new way and think
 what you have not thought before.
 #+end_notes
 
-* References
+** References
 /Cultivating Instinct/ Katrina Owen
 https://www.youtube.com/watch?v=Q1Tlo4VnQrA
