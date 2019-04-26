@@ -33,7 +33,31 @@
 " / C++Now / Aspen, CO / %d</h4>"))
 #+END_SRC
 
-* Introduction
+* Introduction/Motivation
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+(In response to post-talk questions about how to "identify your monoids")
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+#+REVEAL_HTML: <blockquote nil><p>&quot;As a writer of a library, or code that someone else will use,<br>
+#+REVEAL_HTML: identifying monoids in your code -- in your types and your<br>
+#+REVEAL_HTML: operations -- I think is one of the single biggest things<br>
+#+REVEAL_HTML: you can do to help users of your library.&quot;</p>
+#+REVEAL_HTML: <div></div><div class='author'>-- me, <em>Easy to Use, Hard to Misuse: Declarative Style in C++</em></div></blockquote>
+
+#+begin_notes
+It's also one of the best things you can do to help your own thinking about
+library architecture and the macro structure of your code.
+
+When we recognize monoids, we gain the ability to separate concerns.
+
+If we write code as raw loops, we commingle the business logic with the code
+that handles control flow.
+
+Instead of having to learn anew how each computation in our code works, a user
+of our code/library just has to learn one idea: that of accumulation. They don't
+have to puzzle out what each loop is doing.
+#+end_notes
 
 ** Preliminaries
 
@@ -55,6 +79,7 @@ talk in examples.
 
 ** Why
 
+#+REVEAL_HTML: <div class='vertspace2'></div>
 Why are monoids important?
 
 Why is "abstract mathematics" important for programming?
@@ -62,18 +87,39 @@ Why is "abstract mathematics" important for programming?
 #+begin_notes
 (Tell the Simeon story.)
 
-There are people who think this kind of mathematics has no place in programming.
-(They don't seem to mind other kinds of maths like linear algebra.) They are
-looking at things the wrong way.
+Maths : Programming :: Chemistry : Baking
+
+You can program without maths, just like you can bake without knowing chemistry.
+But you're doing it anyway. You already have an intuition for it.
 
 When we program, we're doing maths whether we know it or not, and it helps us to
 realize that. Composition is the essence of programming architecture. Abstract
 algebra is the framework for ideas of composition.
 
-You can program without maths, just like you can bake without knowing chemistry.
-But you're doing it anyway. You already have an intuition for it.
-
 Abstract algebra is to programming what calculus is to modelling the real world.
+#+end_notes
+
+** Abstractions
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+#+REVEAL_HTML: <blockquote nil><p>&quot;Being abstract is something profoundly different from being<br>
+#+REVEAL_HTML: vague... the purpose of abstraction is not to be vague,<br>
+#+REVEAL_HTML: but to create a new semantic level<br>in which one can be absolutely precise.&quot;</p>
+#+REVEAL_HTML: <div></div><div class='author'>-- EWD</div></blockquote>
+
+#+begin_notes
+Monoids embody a fundamental shape of computation. It's a tool for talking about
+code.
+
+Compare Design Patterns. The book came out in 1995. The implementations
+in it are of their time. They represent a Java-style, late 90s, heavy-OO,
+dynamic dispatch style of implementation. That's not the lasting legacy of the
+book.
+
+"I think we could solve this with a visitor pattern" doesn't mean "let's open
+the Gang of Four book and implement all this machinery to implement dynamic
+double-dispatch." It means "I think we could benefit from the ability to
+easily add behaviours over types."
 #+end_notes
 
 ** A quick code review
@@ -108,6 +154,7 @@ Do you see any problems?
 
 ** How did we know that?
 
+#+REVEAL_HTML: <div class='vertspace2'></div>
 Expertise.
 
  - Hard to say how
@@ -129,14 +176,12 @@ not even know where to begin.
 
 ** How brains work
 
+#+REVEAL_HTML: <div class='vertspace2'></div>
 1. See lots of examples with lots of variation. Some variation is relevant,
    some is not.
 1. Figure out which variation is relevant, and classify.
 1. Trial and error: rinse, repeat...
 1. Result after time: "instinctual" expertise
-
-#+ATTR_REVEAL: :frag (appear)
-So let's get going.
 
 #+begin_notes
 We can say how we got here, because this is what brains do. We don't learn by
@@ -152,6 +197,7 @@ When we have that sense, then it can be useful to fill in more theory.
 
 ** What is a monoid?
 
+#+REVEAL_HTML: <div class='vertspace2'></div>
 A set of values.
  - finite or infinite
 
@@ -162,90 +208,15 @@ A binary operation.
 One special value in the set.
  - the identity
 
+#+ATTR_REVEAL: :frag (appear)
+So let's see some examples.
+
 #+begin_notes
 Before I show examples, here is some context to understand them.
+
+I want to build a sense for spotting them in the wild and an intuition for
+knowing when they might be lurking. So let's get to examples.
 #+end_notes
-
-* Motivation
-
-#+REVEAL_HTML: <div class='vertspace2'></div>
-(In response to post-talk questions about how to "identify your monoids")
-#+REVEAL_HTML: <div class='vertspace2'></div>
-
-#+REVEAL_HTML: <blockquote nil><p>&quot;As a writer of a library, or code that someone else will use,<br>
-#+REVEAL_HTML: identifying monoids in your code -- in your types and your<br>
-#+REVEAL_HTML: operations -- I think is one of the single biggest things<br>
-#+REVEAL_HTML: you can do to help users of your library.&quot;</p>
-#+REVEAL_HTML: <div></div><div class='author'>-- me, <em>Easy to Use, Hard to Misuse: Declarative Style in C++</em></div></blockquote>
-
-#+begin_notes
-It's also one of the best things you can do to help your own thinking about
-library architecture and the macro structure of your code.
-#+end_notes
-
-** Why is it important to recognize them?
-
-Architecture.
-A means to talk about what's happening in our code.
-
-It's not about functional programming, it's not about abstraction for its own
-sake.
-
-Computational sympathy.
-
-** Abstraction
-
-"Being abstract is something profoundly different from being vague... the purpose
-of abstraction is not to be vague, but to create a new semantic level in which
-one can be absolutely precise."
-
---EWD
-
-** Design Patterns
-
-Compare Design Patterns.
-
-There are people who get the wrong end of the stick about this. There are people
-who, for example, tweet that they're hiring, but say things like "use of Design
-Patterns is a negative".
-
-Design Patterns came out in 1995. The implementations in it are of their time.
-They represent a Java-style, late 90s, heavy-OO, dynamic dispatch style of
-implementation. That's not the lasting legacy of the book.
-
-If we're talking about code and I say to you, "I think we could solve this with
-a visitor pattern", I'm not saying "let's open the Gang of Four book and
-implement all this machinery to implement dynamic double-dispatch." I'm saying
-"I think we could benefit from the ability to easily add behaviours over types."
-And we can implement that using all the tools we have in our toolbox and make it
-perform arbitrarily well according to our needs.
-
-** The power of abstraction
-
-We can talk about our code's needs rather than how to implement those needs
-
-** Late night coding with Simeon
-
-You only have a binary operation to combine objects
-You have a list of objects to combine
-Show a raw loop
-Realize it's an accumulate - we have a monoid!
-
-** Alex Stepanov
-
-Saw/realised the structure of monoids/semigroups while sick
-
-** Why?
-
-When we recognize monoids, we gain the ability to separate concerns.
-
-If we write code as raw loops, we commingle the business logic with the code
-that handles control flow.
-
-Instead of having to learn anew how each computation in our code works, a user
-of our code/library just has to learn one idea: that of accumulation. They don't
-have to puzzle out what each loop is doing.
-
 
 * Examples
 
@@ -789,7 +760,6 @@ If ~T~ is a semigroup, then ~std::optional<T>~ is a monoid.
 #+REVEAL_HTML: <div class='vertspace2'></div>
 Note: a monoid is a semigroup.
 
-
 * Monoidal statistics
 #+REVEAL_HTML: <div class='vertspace2'></div>
 Computation of statistics is almost always monoidal.
@@ -810,7 +780,6 @@ Monoids are closed.
 The property of being closed is the key to using bounded space.
 #+end_notes
 
-
 ** Simply summing (counting) things
 #+REVEAL_HTML: <div class='vertspace2'></div>
 
@@ -824,7 +793,6 @@ The property of associativity is the key to distribution.
 
 This is distribution over hardware...
 #+end_notes
-
 
 ** Simply summing (counting) things
 #+REVEAL_HTML: <div class='vertspace2'></div>
@@ -841,7 +809,6 @@ If we keep the sums at each level of the tree here then we can query any time
 period in logarithmic time.
 #+end_notes
 
-
 ** Simply summing (counting) things
 #+REVEAL_HTML: <div class='vertspace2'></div>
 
@@ -855,7 +822,6 @@ The existence of an identity is the key to flexibility in management.
 
 Zeroes don't matter => it doesn't matter
 #+end_notes
-
 
 ** A few statistical monoids
 #+REVEAL_HTML: <div class='vertspace2'></div>
@@ -880,7 +846,6 @@ All of these are composable. We could have a histogram of top Ns, or top N
 averages, etc.
 #+end_notes
 
-
 ** Fantastic (Monoidal) Algorithms
 #+REVEAL_HTML: <div class='vertspace2'></div>
 
@@ -900,7 +865,6 @@ These are probabilistic algorithms.
 They work by keeping relatively small amounts of state, that we know how to
 combine with a monoid operation. This is the key to their distribution.
 #+end_notes
-
 
 ** HyperLogLog
 #+REVEAL_HTML: <div class='vertspace2'></div>
@@ -930,7 +894,6 @@ machines, and we know how to combine these vectors monoidally.
 At a very modest cost we can count billions of uniques with say 99% accuracy.
 #+end_notes
 
-
 ** Count-Min Sketch
 #+REVEAL_HTML: <div class='vertspace2'></div>
 
@@ -950,7 +913,6 @@ Conceptually, we use several hash functions.
 It's similar to a bloom filter.
 #+end_notes
 
-
 ** Count-Min Sketch
 #+REVEAL_HTML: <div class='vertspace2'></div>
 
@@ -965,7 +927,6 @@ insert(Bob)
 #+begin_notes
 Bob collides with Alice, but only on one of the hash functions.
 #+end_notes
-
 
 ** Count-Min Sketch
 #+REVEAL_HTML: <div class='vertspace2'></div>
@@ -1015,7 +976,6 @@ Monoids pervade distributed computations, especially statistics.
 
 See also: Avi Bryant, /Add ALL the Things/ (Strange Loop 2013) \\
 https://www.infoq.com/presentations/abstract-algebra-analytics
-
 
 * Incremental Computation
 #+REVEAL_HTML: <div class='vertspace2'></div>
@@ -1143,7 +1103,6 @@ Putting ~nonstd::iterate~ to work.
 Endofunctions go hand-in-glove with procedural generation.
 #+end_notes
 
-
 ** Maze generation
 #+REVEAL_HTML: <div class='vertspace2'></div>
 You probably know a few algorithms for maze generation.
@@ -1185,7 +1144,6 @@ To finish, link (east-west) all cells from different sets.
 #+REVEAL_HTML: <div class='vertspace2'></div>
 
 Eller's algorithm: ~nonstd::iterate_n~ in action.
-
 
 * Monoid Homomorphisms
 #+REVEAL_HTML: <div class='vertspace2'></div>
@@ -1360,6 +1318,20 @@ whether or not it's possible to transform it, and what are the likely gains if
 we can.
 #+end_notes
 
+** Why use a MH?
+#+REVEAL_HTML: <div class='vertspace2'></div>
+When you spot a monoid, wonder if there's a monoid homomorphism.
+
+Maybe you can get the calculation into a different space:
+#+ATTR_REVEAL: :frag (appear)
+ - where you can do more
+ - where you can do things faster
+ - where you can think more easily
+
+#+begin_notes
+All of these apply.
+#+end_notes
+
 * Even more on monoids
 #+REVEAL_HTML: <div class='vertspace2'></div>
 
@@ -1381,6 +1353,13 @@ commutative./"
 #+REVEAL_HTML: <div class='vertspace2'></div>
 Data-level parallelism at war with function-level parallelism...
 
+#+begin_notes
+This is really unfortunate.
+
+I understand that this is required for vectorization. But as we've seen,
+associativity is the only crucial requirement for distributed calculations, and
+the requirement for commutativity puts a spanner in the works for distribution.
+#+end_notes
 
 ** Folding over tree structures
 #+REVEAL_HTML: <div class='vertspace2'></div>
@@ -1403,6 +1382,18 @@ loop because we think algorithms can't deal with what we're doing. If we think
 in terms of monoids, we can get that separation of control flow from logic and
 we can often use an accumulate-like algorithm to achieve that.
 #+end_notes
+
+** Folding over tree structures
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+#+begin_src c++
+template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
+template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
+
+// and use std::visit...
+#+end_src
+
+The ability to have a recursive-lambda overload set (see e.g. P0784) helps.
 
 ** Futures as monoids
 #+REVEAL_HTML: <div class='vertspace2'></div>
