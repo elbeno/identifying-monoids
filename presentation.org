@@ -75,6 +75,9 @@ Some people, online or wherever, may be confused, so I wanted to be clear.
 This isn't a talk with a lot of category theory. I'm probably going to say lots
 of things that mathematicians will take issue with. I'm going to try ground this
 talk in examples.
+
+Also, I will be interchangeably using the terms: fold, accumulate, sometimes
+reduce.
 #+end_notes
 
 ** Why
@@ -108,8 +111,8 @@ Abstract algebra is to programming what calculus is to modelling the real world.
 #+REVEAL_HTML: <div></div><div class='author'>-- EWD</div></blockquote>
 
 #+begin_notes
-Monoids embody a fundamental shape of computation. It's a tool for talking about
-code.
+Monoids embody a fundamental shape of computation. So they're a tool for talking
+about and thinking about code.
 
 Compare Design Patterns. The book came out in 1995. The implementations
 in it are of their time. They represent a Java-style, late 90s, heavy-OO,
@@ -118,8 +121,9 @@ book.
 
 "I think we could solve this with a visitor pattern" doesn't mean "let's open
 the Gang of Four book and implement all this machinery to implement dynamic
-double-dispatch." It means "I think we could benefit from the ability to
-easily add behaviours over types."
+double-dispatch." It means something like "I recognize the shape of this code,
+and I think we could benefit from the ability to easily add behaviours over
+types."
 #+end_notes
 
 ** A quick code review
@@ -182,6 +186,9 @@ not even know where to begin.
 1. Figure out which variation is relevant, and classify.
 1. Trial and error: rinse, repeat...
 1. Result after time: "instinctual" expertise
+
+/Cultivating Instinct/ Katrina Owen
+https://www.youtube.com/watch?v=Q1Tlo4VnQrA
 
 #+begin_notes
 We can say how we got here, because this is what brains do. We don't learn by
@@ -704,7 +711,8 @@ Usually for one of two reasons:
  - different identities are required for different operations
 
 #+begin_notes
-Often occurs in values representing things in the real world.
+Often occurs in values representing things in the real world. Color has several
+perfectly suitable operations we can use to combine. But no one identity?
 
 Clue to this: no good value choice for a default constructor.
 
@@ -1092,6 +1100,10 @@ And now we see iota revealed for what it really is: sometimes called an unfold.
 
 `iterate` is a function that we don't have in the standard library, but it would
 be really useful.
+
+We could also look at it as a generalization of ~accumulate~, exposing the
+internal state at each iteration, or as a kind of ~partial_sum~ that computes
+the input as it goes.
 #+end_notes
 
 * Endofunctions and Procedural generation
@@ -1140,10 +1152,34 @@ Then, given a row:
 
 To finish, link (east-west) all cells from different sets.
 
+** Eller's algorithm
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+#+attr_html: :width 600px
+[[./ellers.svg]]
+
+#+begin_notes
+1. you have a row. each cell in the row is notionally in a set.
+
+2. you carve east (remove the walls) randomly between cells.
+
+3. you carve south randomly at least once from each set. unconnected cells in the
+new row belong to new sets.
+
+4. go to 1 until you've done enough.
+
+5. for the final row, carve east linking all the different sets.
+#+end_notes
+
 ** Demo
 #+REVEAL_HTML: <div class='vertspace2'></div>
 
 Eller's algorithm: ~nonstd::iterate_n~ in action.
+
+** Streaming with monoids
+#+REVEAL_HTML: <div class='vertspace2'></div>
+When we recognize a monoidal operation, and extract the state, we get
+easier incremental computation ability.
 
 * Monoid Homomorphisms
 #+REVEAL_HTML: <div class='vertspace2'></div>
@@ -1316,6 +1352,11 @@ plain old arithmetic.
 But thinking about the structure of the calculation in general can clue us in to
 whether or not it's possible to transform it, and what are the likely gains if
 we can.
+
+Some RNGs (including PCG) can also be run backwards. Imagine the combination of
+this with the maze generation we saw. We could fix (bound) the number of random
+numbers used per row, make that the state, and get the ability to randomly
+access any row of the maze.
 #+end_notes
 
 ** Why use a MH?
@@ -1364,7 +1405,7 @@ the requirement for commutativity puts a spanner in the works for distribution.
 ** Folding over tree structures
 #+REVEAL_HTML: <div class='vertspace2'></div>
 
-"Normal" monoids have two operations:
+"Normal" ~accumulate~ has two operations:
  - one for combining with identity
  - one for combining with value
 
@@ -1387,13 +1428,48 @@ we can often use an accumulate-like algorithm to achieve that.
 #+REVEAL_HTML: <div class='vertspace2'></div>
 
 #+begin_src c++
-template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
-template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
+struct EmptyVector {};
 
-// and use std::visit...
+template <typename T>
+using Vector<T> = variant<EmptyVector, pair<T, Vector<T>>>;
 #+end_src
 
-The ability to have a recursive-lambda overload set (see e.g. P0784) helps.
+#+begin_src c++
+accumulate(first, last,
+           init, // <- deal with EmptyVector
+           plus) // <- deal with T
+#+end_src
+
+~nonstd::overload~ and the ability to have a recursive-lambda overload set
+(e.g. http://wg21.link/p0847) helps.
+
+#+begin_notes
+P0847: deducing ~this~
+
+We can achieve "recursive lambdas" by using variable template lambdas with
+specializations.
+#+end_notes
+
+** Folding over tree structures
+#+REVEAL_HTML: <div class='vertspace2'></div>
+Q: How is folding over a tree different from ~std::visit~?
+
+A: The same way ~accumulate~ is different from ~for_each~.
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+#+begin_src c++
+const auto sum = std::accumulate(first, last, 0);
+
+auto sum = 0;
+std::for_each(first, last, [&] (auto value) { sum += value; };
+#+end_src
+
+#+begin_notes
+With folds, we unlock a declarative code style. We remove the state from the
+operation. It's easier to manage that state.
+
+We get the idea of incremental computation again. Or distributed computation.
+#+end_notes
 
 ** Futures as monoids
 #+REVEAL_HTML: <div class='vertspace2'></div>
@@ -1406,6 +1482,8 @@ Futures form a monoid with the "race" operation. (~when_any~)
  - the identity is ~never~ (the future that never completes)
 
 #+begin_notes
+Explain.
+
 This could be useful for example for modelling cancellation. Imagine "racing" a
 computation against a UI element that completes its future when the user hits
 cancel...
@@ -1490,7 +1568,8 @@ Haskeller, impressed: "Ooh, you mean in the sense of [FP stuff]?"
 You: "Up to isomorphism, yes."
 
 #+begin_notes
-This works because /literally everything/ is a monoid under some interpretation.
+This works because /practically everything/ is a monoid under some
+interpretation.
 #+end_notes
 
 * Final thoughts
@@ -1657,7 +1736,6 @@ http://blog.sigfpe.com/2009/01/fast-incremental-regular-expression.html
 ** Tournaments
 
 ** Diagrams
-
 
 ** My favourite quote
 
