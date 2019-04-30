@@ -208,7 +208,7 @@ not even know where to begin.
 1. Trial and error: rinse, repeat...
 1. Result after time: "instinctual" expertise
 
-/Cultivating Instinct/ Katrina Owen\\
+Katrina Owen /Cultivating Instinct/ \\
 https://www.youtube.com/watch?v=Q1Tlo4VnQrA
 
 #+begin_notes
@@ -308,14 +308,14 @@ Mirror situations apply for dealing with negative numbers.
  \( \left \{ \{true, false\}, \land, true \right \} \)
 #+begin_src c++
 template <typename... Args>
-bool all(Args&&... args) { return (... && args); }
+constexpr bool all(Args&&... args) { return (... && args); }
 #+end_src
 
 #+REVEAL_HTML: <div class='vertspace2'></div>
  \( \left \{ \{true, false\}, \lor, false \right \} \)
 #+begin_src c++
 template <typename... Args>
-bool any(Args&&... args) { return (... || args); }
+constexpr bool any(Args&&... args) { return (... || args); }
 #+end_src
 
 #+begin_notes
@@ -392,7 +392,7 @@ increment.
 #+REVEAL_HTML: <div class='vertspace2'></div>
 
 #+begin_src c++
-template <class InputIt, class Size, class T, class BinaryOp>
+template <typename InputIt, typename Size, typename T, typename BinaryOp>
 constexpr auto accumulate_n(InputIt first, Size n, T init, BinaryOp op)
     -> std::pair<T, InputIt> {
   for (; n > 0; --n, ++first) {
@@ -422,7 +422,7 @@ the window.
 #+REVEAL_HTML: <div class='vertspace2'></div>
 
 #+begin_src c++
-template <class InputIt, class T, class BinaryOp>
+template <typename InputIt, typename T, typename BinaryOp>
 constexpr T accumulate_iter(InputIt first, InputIt last, T init, BinaryOp op) {
   for (; first != last; ++first) {
     init = op(std::move(init), first);
@@ -472,7 +472,7 @@ std::vector<T> v{1, 2, 3, 4, 5};
 
 std::accumulate(
     std::cbegin(v), std::cend(v), std::ref(std::cout),
-    [](auto &os, auto &elem) -> decltype(auto) { return os.get() << elem; });
+    [](auto &os, const auto &elem) -> decltype(auto) { return os.get() << elem; });
 #+end_src
 
 Here, ~cout~ is acting like the accumulating string.
@@ -519,8 +519,8 @@ So we're reducing over the map here, and outputting the string.
 template <typename InputIt, typename OutputIt, typename T, typename Projection>
 OutputIt join(InputIt first, InputIt last,
               OutputIt dest,
-              const T& delimiter,
-              Projection&& proj);
+              T delimiter,
+              Projection proj);
 #+end_src
 
 See also: ~std::experimental::ostream_joiner~, ~ranges::view::join~.
@@ -706,8 +706,8 @@ And the monoids are composed together.
 
 ** Protocol Buffers: monoids in disguise
 "As mentioned above, elements in a message description can be labeled optional.
-... If the default value is not specified for an optional element, a
-type-specific default value is used instead"
+... If the default value is not specified for an optional element, \\
+a type-specific default value is used instead"
 
 https://developers.google.com/protocol-buffers/docs/proto
 
@@ -844,7 +844,7 @@ class specialization for them.
 
 Then a generic fold function will do what you want.
 
-(Explain)
+James Touton, Homogeneous Variadic Function Parameters P1219
 #+end_notes
 
 * Monoidal statistics
@@ -1118,7 +1118,7 @@ For now let's just restrict ourselves to thinking about functions from A to A.
 #+REVEAL_HTML: <div class='vertspace2'></div>
 
 #+begin_src c++
-template<class ForwardIt, class T>
+template <typename ForwardIt, typename T>
 void iota(ForwardIt first, ForwardIt last, T value)
 {
     while(first != last) {
@@ -1187,7 +1187,7 @@ elements, it's easy to pull out the "+1" and have it be anything we want it to b
 #+REVEAL_HTML: <div class='vertspace2'></div>
 
 #+begin_src c++
-template<class ForwardIt, class T, class EndoFunction>
+template <typename ForwardIt, typename T, typename EndoFunction>
 constexpr void iterate(ForwardIt first, ForwardIt last, T init, EndoFunction f)
 {
     while (first != last) {
@@ -1300,8 +1300,8 @@ Eller's algorithm: ~nonstd::iterate_n~ in action.
 
 ** Streaming with monoids
 #+REVEAL_HTML: <div class='vertspace2'></div>
-When we recognize a monoidal operation, and extract the state, we get
-easier incremental computation ability.
+When we recognize a monoidal operation, and extract the state,\\
+we get easier incremental computation ability.
 
 #+REVEAL_HTML: <div class='vertspace2'></div>
 This is applicable at scale, or in the comfort of our own CPU.
@@ -1360,7 +1360,7 @@ See also:
 ** Example
 
 #+REVEAL_HTML: <div class='vertspace2'></div>
-Q. What's the best way to compute the n^{th} fibonacci number?
+Q. What's the best way to compute the n^{th} Fibonacci number?
 
 #+REVEAL_HTML: <div class='vertspace2'></div>
 #+ATTR_REVEAL: :frag appear
@@ -1378,7 +1378,7 @@ What do we get out of this? Well, we can look at it as a monoid transformation.
 ** Fibonacci
 
 #+REVEAL_HTML: <div class='vertspace2'></div>
-The fibonacci sequence is a function:
+The Fibonacci sequence is a function:
 
 #+REVEAL_HTML: <div class='vertspace2'></div>
 \( \{fib_{n-1}, fib_n\} \rightarrow \{fib_n, fib_{n+1}\} \)
@@ -1420,8 +1420,8 @@ The standard library has a function that advances an RNG.
 #+begin_src c++
 std::linear_congruential_engine::discard(unsigned long long z);
 #+end_src
-"Advances the internal state by ~z~ times. Equivalent to calling ~operator()~
-~z~ times and discarding the result."
+"Advances the internal state by ~z~ times. \\
+Equivalent to calling ~operator()~ ~z~ times and discarding the result."
 
 #+REVEAL_HTML: <div class='vertspace2'></div>
 
@@ -1525,7 +1525,7 @@ surface. Any one of the applications coming up could be a talk in itself.
 ** ಠ_ಠ
 #+REVEAL_HTML: <div class='vertspace2'></div>
 #+begin_src c++
-template <class InputIt, class T, class BinaryOp>
+template <typename InputIt, typename T, typename BinaryOp>
 T reduce(InputIt first, InputIt last, T init, BinaryOp binary_op);
 #+end_src
 "The behavior is non-deterministic if binary_op is not associative /or not
@@ -1581,8 +1581,8 @@ accumulate(first, last,
 #+end_src
 
 #+ATTR_REVEAL: :frag appear
-~nonstd::overload~ and the ability to have a recursive-lambda overload set
-(e.g. enabled by https://wg21.link/p0847 /deducing this/) helps.
+~nonstd::overload~ and the ability to have a recursive-lambda overload set\\
+(e.g. enabled by P0847 /deducing this/) helps.
 
 #+begin_notes
 The key to thinking about folding over trees is to think about folding over a
@@ -1591,8 +1591,6 @@ so ~accumulate~ actually takes two "functions" to deal with each of those cases.
 
 Once we get the hang of thinking that way, it's easy to extend it to sum types
 in general. A tree might be either a leaf node or a branch linking two subtrees.
-
-P0847: deducing ~this~
 
 We can achieve "recursive lambdas" by using variable template lambdas with
 specializations.
@@ -1640,9 +1638,7 @@ cancel...
 #+end_notes
 
 ** Parsers as monoids
-#+REVEAL_HTML: <div class='vertspace2'></div>
 You remember:
-
 #+REVEAL_HTML: <blockquote nil><p>&quot;A parser for things is a function from strings<br>
 #+REVEAL_HTML: to lists of pairs of things and strings.&quot;</p>
 #+REVEAL_HTML: <div></div><div class='author'>-- Fritz Ruehr, <em>Dr. Seuss on Parser Monads</em></div></blockquote>
@@ -1707,10 +1703,8 @@ Dan Piponi wrote about this on his blog.
 "You can do this in C++, say, using mutable red-black trees."
 #+end_notes
 
-** How to +troll+ impress Haskell programmers
-#+REVEAL_HTML: <div class='vertspace2'></div>
-Play The Monoid Game...
-
+** The monoid game
+or, how to +troll+ engage with Haskell programmers
 #+REVEAL_HTML: <div class='vertspace2'></div>
 You: "X is a monoid!"
 
@@ -1719,6 +1713,10 @@ Haskeller, interested: "Ooh, you mean in the sense of [FP stuff]?"
 
 #+ATTR_REVEAL: :frag appear
 You: "Up to isomorphism."
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+#+ATTR_REVEAL: :frag appear
+This works because /almost everything/ is a monoid under some interpretation.
 
 #+begin_notes
 This works because /practically everything/ is a monoid under some
