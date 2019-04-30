@@ -80,6 +80,28 @@ Also, I will be interchangeably using the terms: fold, accumulate, sometimes
 reduce.
 #+end_notes
 
+** What is a monoid?
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+#+REVEAL_HTML: <blockquote nil><p>&quot;Monoidi sunt omnes divisi in partes tres.&quot</p>
+#+REVEAL_HTML: <div></div><div class='author'>-- Julius Caesar, <em>De Bello Monoido</em></div></blockquote>
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+1. A set of values.
+ - finite or infinite
+1. A binary operation.
+ - closed
+ - associative
+1. One special value in the set.
+ - the identity
+
+#+begin_notes
+Before I show examples, here is some context to understand them.
+
+I want to build a sense for spotting them in the wild and an intuition for
+knowing when they might be lurking. So let's get to examples.
+#+end_notes
+
 ** Why
 
 #+REVEAL_HTML: <div class='vertspace2'></div>
@@ -111,13 +133,12 @@ Abstract algebra is to programming what calculus is to modelling the real world.
 #+REVEAL_HTML: <div></div><div class='author'>-- EWD</div></blockquote>
 
 #+begin_notes
-Monoids embody a fundamental shape of computation. So they're a tool for talking
-about and thinking about code.
+Monoids are a design pattern. They embody a fundamental shape of computation. So
+they're a tool for talking about and thinking about code.
 
-Compare Design Patterns. The book came out in 1995. The implementations
-in it are of their time. They represent a Java-style, late 90s, heavy-OO,
-dynamic dispatch style of implementation. That's not the lasting legacy of the
-book.
+Design Patterns came out in 1995. The implementations in it are of their time.
+They represent a Java-style, late 90s, heavy-OO, dynamic dispatch style of
+implementation. That's not the lasting legacy of the book.
 
 "I think we could solve this with a visitor pattern" doesn't mean "let's open
 the Gang of Four book and implement all this machinery to implement dynamic
@@ -187,7 +208,7 @@ not even know where to begin.
 1. Trial and error: rinse, repeat...
 1. Result after time: "instinctual" expertise
 
-/Cultivating Instinct/ Katrina Owen
+/Cultivating Instinct/ Katrina Owen\\
 https://www.youtube.com/watch?v=Q1Tlo4VnQrA
 
 #+begin_notes
@@ -200,28 +221,6 @@ will form its own pattern-recognition pathways. This is what brains do (very
 well).
 
 When we have that sense, then it can be useful to fill in more theory.
-#+end_notes
-
-** What is a monoid?
-
-#+REVEAL_HTML: <div class='vertspace2'></div>
-#+REVEAL_HTML: <blockquote nil><p>&quot;Monoidi sunt omnes divisi in partes tres.&quot</p>
-#+REVEAL_HTML: <div></div><div class='author'>-- Julius Caesar, <em>De Bello Monoido</em></div></blockquote>
-#+REVEAL_HTML: <div class='vertspace2'></div>
-
-1. A set of values.
- - finite or infinite
-1. A binary operation.
- - closed
- - associative
-1. One special value in the set.
- - the identity
-
-#+begin_notes
-Before I show examples, here is some context to understand them.
-
-I want to build a sense for spotting them in the wild and an intuition for
-knowing when they might be lurking. So let's get to examples.
 #+end_notes
 
 * Examples
@@ -361,6 +360,13 @@ The following algorithms are almost a dead giveaway:
  - basically, all the algorithms in ~<numeric>~
  - fold expressions
 
+#+begin_notes
+These algorithms are fairly obvious to spot and naturally make one think about
+the monoidal structure contained.
+
+We'll cover a bit more on ~<numeric>~ later.
+#+end_notes
+
 ** ~<algorithm>~: the other "usual suspects"
 #+REVEAL_HTML: <div class='vertspace2'></div>
 
@@ -372,6 +378,14 @@ Suspect a monoid whenever you find yourself using the following algorithms:
  - ~count~, ~count_if~
 
 #+begin_notes
+~find~ is a little less obvious, although we've seen the boolean monoids. Of
+course we shouldn't just replace everything with a reduction - ~find~ gives us
+short circuiting. But it's useful to know that these are fundmentally monoidal
+because it tells us about how we can compute things incrementally and/or in a
+distributed way. More on that to come.
+
+~count~ has the structure where we're repeatedly applying a conditional
+increment.
 #+end_notes
 
 ** Useful reformulations of ~accumulate~
@@ -425,7 +439,7 @@ This is a formulation of ~accumulate~ that I used for the code experiments in my
 2016 talk "accumulate: Exploring an Algorithmic Empire".
 
 In C++2014 there were 90 standard algorithms. Using this formulation of
-accumulate and some jiggery-pokery I was able to implement 77 of them.
+accumulate and some "creativity" I was able to implement 77 of them.
 #+end_notes
 
 * More Examples
@@ -491,6 +505,14 @@ join(std::cbegin(url_args), std::cend(url_args),
 
 We accumulate the query arguments into the url.
 
+#+begin_notes
+~join~ is an accumulate-style algorithm. The formulation I like to use takes an
+initial value ('&') and a projection function, and accumulates into an output
+iterator.
+
+So we're reducing over the map here, and outputting the string.
+#+end_notes
+
 ** Joining string-ish things
 
 #+begin_src c++
@@ -526,13 +548,16 @@ How can we compose animations?
 Let's take what we've seen so far and do a thought experiment: how could we
 design API elements for an animation library?
 
-Think about 1D animation to make it simple.
+We can identify potential monoids by thinking about the operations we would
+provide and what the identities for those operations would be.
 
-Compose by operation: any monoidal operation! Recall: recognize monoids by
-thinking about what the identity is. (In this case the same-length animation
-that is all "zeroes").
+Think about two basic ways to compose animations: by sequencing, or by pointwise
+operation.
 
-Compose by sequencing: like a string. Again, the identity is the zero-length
+Compose by operation: any monoidal operation! What's the identity? In this case
+the same-length animation that is all "zeroes" (identities).
+
+Compose by sequencing: like a string. What's the identity? The zero-length
 animation.
 #+end_notes
 
@@ -625,7 +650,8 @@ The empty set is usually easy to code.
 
 The universe (all possible sets) is usually more difficult...
 
-One of the applications here is collecting properties, arguments, etc.
+One of the applications here is collecting properties, arguments, etc. This is
+exactly the use case that I realized from the story at the top of the talk.
 #+end_notes
 
 * Monoidal configuration
@@ -758,14 +784,15 @@ auto monoid_op = [](const std::optional<T>& x, const std::optional<T>& y)
   return Operation{}(*x, *y);
 };
 #+end_src
-
-** ~std::optional~ as a Monoid
-#+REVEAL_HTML: <div class='vertspace2'></div>
-
 If ~T~ is a semigroup, then ~std::optional<T>~ is a monoid.
 
-#+REVEAL_HTML: <div class='vertspace2'></div>
-Note: a monoid is a semigroup.
+#+begin_notes
+This is one option (haha) we have for making a monoid, if we don't have easy
+access to an identity value.
+
+As long as we have an associative operation, we can use ~std::optional~ to
+provide an identity, just where we need it, and we get a monoid.
+#+end_notes
 
 ** Arity flexibility
 #+REVEAL_HTML: <div class='vertspace2'></div>
@@ -774,7 +801,7 @@ You have some choices:
 
 #+ATTR_REVEAL: :frag (appear)
 1. Overload an operator: get fold expressions
-1. Make a special type, define operations on it
+1. Make a special type, define operations on it, dynamic OO-style
 1. Provide a traits class and generic code
 1. Do something with concepts
 1. Other variations...
@@ -783,8 +810,11 @@ You have some choices:
 If you can overload an operator sensibly, you can take advantage of fold
 expressions inline.
 
-If not, one reasonable approach is to use compile-time OO (aka traits classes)
-to provide easy call sites for your monoid operations.
+Dynamic dispatch is a possibility if that's what your codebase likes to do. I
+suspect that isn't a favourite for this crowd. But we can do object orientation
+at compile-time with traits classes.
+
+And we can supplement any of these with concepts.
 #+end_notes
 
 ** Traits & Concepts
@@ -809,9 +839,12 @@ constexpr auto fold(Ts... ts) {
 #+begin_notes
 This is a reasonable way to go.
 
-Name your monoids, and provide a traits class for them.
+Constrain your types with concepts. Name your monoids, and provide a traits
+class specialization for them.
 
 Then a generic fold function will do what you want.
+
+(Explain)
 #+end_notes
 
 * Monoidal statistics
@@ -872,9 +905,9 @@ period in logarithmic time.
 Monoids have an identity.
 
 #+begin_notes
-The existence of an identity is the key to flexibility in management.
+The existence of an identity is the key to flexibility in operations management.
 
-Zeroes don't matter => it doesn't matter
+Zeroes don't matter => piecemeal deployment.
 #+end_notes
 
 ** A few statistical monoids
@@ -887,23 +920,26 @@ Zeroes don't matter => it doesn't matter
  - histogram
 
 #+begin_notes
-Max and min are obvious.
+Max and min: we've already covered them.
 
 Top N is an easy extension of max/min (i.e. top 1).
 
-Mean is easy too: one way to do it is store the sum and count.
+Mean is easy too: one way to do it is store the sum and count. A sliding window
+rolling average is an interview question that Blizzard used for some years; it's
+basically a monoid application.
 
-We can imagine how histogram works: it's basically a vector of counts, and we
+Imagine how histogram works: it's basically a vector of counts, and we
 know how to sum that pointwise.
 
-All of these are composable. We could have a histogram of top Ns, or top N
-averages, etc.
+And when I say how to "sum" that pointwise, I mean how to "any monoid operation"
+that pointwise. So all of these are composable. We could have a histogram of top
+Ns, or top N averages, etc.
 #+end_notes
 
 ** Fantastic (Monoidal) Algorithms
 #+REVEAL_HTML: <div class='vertspace2'></div>
 
-Micholas Ormrod's 2017 CppCon talk "Fantastic Algorithms and Where to Find Them".
+Nicholas Ormrod's 2017 CppCon talk "Fantastic Algorithms and Where to Find Them".
 
 https://www.youtube.com/watch?v=YA-nB2wjVcI
 
@@ -918,6 +954,9 @@ These are probabilistic algorithms.
 
 They work by keeping relatively small amounts of state, that we know how to
 combine with a monoid operation. This is the key to their distribution.
+
+It's disappointing that the wikipedia page for streaming algorithm doesn't
+mention monoids.
 #+end_notes
 
 ** HyperLogLog
@@ -1012,7 +1051,9 @@ how_many(Alice)?
 #+begin_notes
 Now we can ask, how many times have we seen Alice?
 
-The min value of the hashes gives us an upper bound.
+The min value of the hashes gives us an upper bound. Alice can't have logged in
+more times than the minimum we see because every time she logged in, we
+incremented that value.
 
 Once again, this is a monoid. In fact, it's a full abelian group. It's
 commutative and it has an inverse - we know how to "erase" one of the times
@@ -1030,6 +1071,11 @@ Monoids pervade distributed computations, especially statistics.
 
 See also: Avi Bryant, /Add ALL the Things/ (Strange Loop 2013) \\
 https://www.infoq.com/presentations/abstract-algebra-analytics
+
+#+begin_notes
+In big data terms, monoid applications are sometimes thought of as map-reduce of
+course.
+#+end_notes
 
 * Incremental Computation
 #+REVEAL_HTML: <div class='vertspace2'></div>
@@ -1051,12 +1097,22 @@ using b_to_c = auto (*) (B) -> C;
 #+end_src
 
 #+begin_notes
-Function composition is associative. It's closed.
-What is the identity here? The identity function of course.
+Here's the pair of function and time we saw from the slide on product types.
+
+Function composition is associative. It's closed. What is the identity here? The
+identity function of course.
 
 For now let's just restrict ourselves to thinking about functions from A to A.
 (Endofunctions).
 #+end_notes
+
+** Let's examine ~std::iota~
+#+attr_html: :width 600px
+[[./iota.jpg]]
+
+#+attr_html: :width 600px
+[[./iota_tweet.png]]
+
 
 ** ~std::iota~
 #+REVEAL_HTML: <div class='vertspace2'></div>
@@ -1072,9 +1128,11 @@ void iota(ForwardIt first, ForwardIt last, T value)
 }
 #+end_src
 
-A monoid lurks.
+Monoidal structure lurks.
 
 #+begin_notes
+By now I hope your spidey senses are tingling.
+
 There is a lurking monoid here... let's try to write ~iota~ as an accumulate.
 #+end_notes
 
@@ -1094,7 +1152,8 @@ void iota(ForwardIt first, ForwardIt last, T value) {
 The structure revealed.
 
 #+begin_notes
-OK, so it's clearly a fold.
+OK, so it's clearly a foldlike thing. ~accumulate~ will call us with the result
+of derefencing the iterator (~next~).
 
 Actually ~std::accumulate~ musn't modify any of the elements of the range, and
 here we're breaking that rule, so this is technically UB. But it's just an
@@ -1102,7 +1161,7 @@ engineering choice - we could trivially use our own version of accumulate (or
 the ~accumulate_iter~ that we saw earlier).
 
 Anyway, writing it this way abstracts the actual "+1" from the computational
-structure.
+structure. Now we can think about generalizing that further.
 #+end_notes
 
 ** ~nonstd::iota~
@@ -1116,6 +1175,8 @@ void iota(ForwardIt first, ForwardIt last, T value, UnaryFunction f) {
   });
 }
 #+end_src
+
+Generalization of the increment.
 
 #+begin_notes
 Once we separate the structure of the loop from what's actually happening to the
@@ -1141,11 +1202,15 @@ constexpr auto iota = [] (auto first, auto last, auto value) {
 };
 #+end_src
 
-#+begin_notes
-And now we see iota revealed for what it really is: sometimes called an unfold.
+Properly generic form.
 
-`iterate` is a function that we don't have in the standard library, but it would
-be really useful.
+#+begin_notes
+And now we see iota revealed for what it really is: the iteration of a function,
+sometimes called an unfold.
+
+~iterate~ is an algorithm that we don't have in the standard library, but it
+would be really useful. And of course, ~iterate_n~, because we want to have the
+iterator-count version as well as the iterator-pair version.
 
 We could also look at it as a generalization of ~accumulate~, exposing the
 internal state at each iteration, or as a kind of ~partial_sum~ that computes
@@ -1158,7 +1223,8 @@ the input as it goes.
 Putting ~nonstd::iterate~ to work.
 
 #+begin_notes
-Endofunctions go hand-in-glove with procedural generation.
+Endofunctions (functions from a type to the same type) go hand-in-glove with
+procedural generation.
 #+end_notes
 
 ** Maze generation
@@ -1176,7 +1242,7 @@ You probably know a few algorithms for maze generation.
  - Eller's
 
 #+begin_notes
-Let's take maze generation as a simple example here. There are lots of different
+Let's take maze generation as a simple example here. Here are lots of different
 algorithms for generating a minimum spanning tree, aka a maze.
 
 You can look these up and implement them at your leisure. I'm just going to use
@@ -1197,6 +1263,16 @@ Then, given a row:
  - any cells in the next row that were not linked from the north get new sets
 
 To finish, link (east-west) all cells from different sets.
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+https://pragprog.com/book/jbmaze/mazes-for-programmers
+
+#+begin_notes
+Explain (next slide: the algorithm in pictures)
+
+Linking cells together is often called carving (carving through the wall between
+the cells).
+#+end_notes
 
 ** Eller's algorithm
 #+REVEAL_HTML: <div class='vertspace2'></div>
@@ -1227,6 +1303,9 @@ Eller's algorithm: ~nonstd::iterate_n~ in action.
 When we recognize a monoidal operation, and extract the state, we get
 easier incremental computation ability.
 
+#+REVEAL_HTML: <div class='vertspace2'></div>
+This is applicable at scale, or in the comfort of our own CPU.
+
 * Monoid Homomorphisms
 #+REVEAL_HTML: <div class='vertspace2'></div>
 
@@ -1249,6 +1328,10 @@ A /monoid homomorphism/ changes one monoid into another, e.g.
  - the identity is preserved (empty string has length zero)
  - general structure is preserved
  - the monoids are different
+
+#+begin_notes
+Explain the string length MH.
+#+end_notes
 
 ** We do this all the time
 
@@ -1277,10 +1360,19 @@ See also:
 ** Example
 
 #+REVEAL_HTML: <div class='vertspace2'></div>
-What's the best way to compute a fibonacci number?
+Q. What's the best way to compute the n^{th} fibonacci number?
+
+#+REVEAL_HTML: <div class='vertspace2'></div>
+#+ATTR_REVEAL: :frag appear
+A. Raise a matrix to the n^{th} power.
 
 #+begin_notes
 I'm sure you know this one.
+
+The fib sequence is a linear recurrence relation, which means we can model it
+with a matrix that we raise to a power to compute the nth term.
+
+What do we get out of this? Well, we can look at it as a monoid transformation.
 #+end_notes
 
 ** Fibonacci
@@ -1297,16 +1389,11 @@ using fib = auto (*)(std::pair<int, int>) -> std::pair<int, int>;
 #+end_src
 
 #+begin_notes
-The fib sequence is a linear recurrence relation, which means we can model it
-with a matrix that we raise to a power to compute the nth term.
-
-What do we get out of this?
-
 Function composition is a monoid, but we're stuck with computing it in linear
 time, because we can't easily compute compositions of functions.
 
-We transform that monoid into matrix multiplication - and we know how to
-do that in logarithmic time.
+We transform that monoid into matrix multiplication - another monoid - and we
+know how to do that in logarithmic time.
 #+end_notes
 
 ** Another example
@@ -1323,6 +1410,8 @@ Can we apply a similar transformation?
 Like fibonacci, we can't do function composition in sublinear time.
 
 But this is basically a monoid, and basically multiply with a bit of other stuff.
+
+The standard library has a function that advances an RNG.
 #+end_notes
 
 ** PRNG applications
@@ -1428,6 +1517,11 @@ left as an exercise for the viewer.
 #+REVEAL_HTML: <div class='vertspace2'></div>
 When you start looking for monoids, they crop up /everywhere/.
 
+#+begin_notes
+There are monoids everywhere, and I only really have time to scratch the
+surface. Any one of the applications coming up could be a talk in itself.
+#+end_notes
+
 ** ಠ_ಠ
 #+REVEAL_HTML: <div class='vertspace2'></div>
 #+begin_src c++
@@ -1486,10 +1580,18 @@ accumulate(first, last,
            plus) // <- deal with T
 #+end_src
 
+#+ATTR_REVEAL: :frag appear
 ~nonstd::overload~ and the ability to have a recursive-lambda overload set
-(e.g. http://wg21.link/p0847) helps.
+(e.g. enabled by https://wg21.link/p0847 /deducing this/) helps.
 
 #+begin_notes
+The key to thinking about folding over trees is to think about folding over a
+vector in the same way. FP languages model lists as a sum type of head and tail,
+so ~accumulate~ actually takes two "functions" to deal with each of those cases.
+
+Once we get the hang of thinking that way, it's easy to extend it to sum types
+in general. A tree might be either a leaf node or a branch linking two subtrees.
+
 P0847: deducing ~this~
 
 We can achieve "recursive lambdas" by using variable template lambdas with
@@ -1514,7 +1616,8 @@ std::for_each(first, last, [&] (auto value) { sum += value; };
 With folds, we unlock a declarative code style. We remove the state from the
 operation. It's easier to manage that state.
 
-We get the idea of incremental computation again. Or distributed computation.
+You can write ~accumulate~ in terms of ~for_each~ but you have to manage that
+state and you lose some of the expressive properties.
 #+end_notes
 
 ** Futures as monoids
@@ -1524,6 +1627,7 @@ No, not as monads. Not today.
 
 #+REVEAL_HTML: <div class='vertspace2'></div>
 Futures form a monoid with the "race" operation. (~when_any~)
+#+ATTR_REVEAL: :frag (appear)
  - (A 'race' B) 'race' C == A 'race' (B 'race' C)
  - the identity is ~never~ (the future that never completes)
 
@@ -1539,8 +1643,9 @@ cancel...
 #+REVEAL_HTML: <div class='vertspace2'></div>
 You remember:
 
-"A parser for things is a function from strings to lists of pairs of things and
-strings."
+#+REVEAL_HTML: <blockquote nil><p>&quot;A parser for things is a function from strings<br>
+#+REVEAL_HTML: to lists of pairs of things and strings.&quot;</p>
+#+REVEAL_HTML: <div></div><div class='author'>-- Fritz Ruehr, <em>Dr. Seuss on Parser Monads</em></div></blockquote>
 
 #+REVEAL_HTML: <div class='vertspace2'></div>
 Parsers form a monoid under alternation.
@@ -1602,16 +1707,18 @@ Dan Piponi wrote about this on his blog.
 "You can do this in C++, say, using mutable red-black trees."
 #+end_notes
 
-** How to impress Haskell programmers
+** How to +troll+ impress Haskell programmers
 #+REVEAL_HTML: <div class='vertspace2'></div>
 Play The Monoid Game...
 
 #+REVEAL_HTML: <div class='vertspace2'></div>
 You: "X is a monoid!"
 
-Haskeller, impressed: "Ooh, you mean in the sense of [FP stuff]?"
+#+ATTR_REVEAL: :frag appear
+Haskeller, interested: "Ooh, you mean in the sense of [FP stuff]?"
 
-You: "Up to isomorphism, yes."
+#+ATTR_REVEAL: :frag appear
+You: "Up to isomorphism."
 
 #+begin_notes
 This works because /practically everything/ is a monoid under some
@@ -1796,5 +1903,5 @@ what you have not thought before.
 #+end_notes
 
 ** References
-/Cultivating Instinct/ Katrina Owen
+/Cultivating Instinct/ Katrina Owen\\
 https://www.youtube.com/watch?v=Q1Tlo4VnQrA
