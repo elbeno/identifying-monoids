@@ -205,18 +205,17 @@ When we have that sense, then it can be useful to fill in more theory.
 ** What is a monoid?
 
 #+REVEAL_HTML: <div class='vertspace2'></div>
-A set of values.
- - finite or infinite
+#+REVEAL_HTML: <blockquote nil><p>&quot;Monoidi sunt omnes divisi in partes tres.&quot</p>
+#+REVEAL_HTML: <div></div><div class='author'>-- Julius Caesar, <em>De Bello Monoido</em></div></blockquote>
+#+REVEAL_HTML: <div class='vertspace2'></div>
 
-A binary operation.
+1. A set of values.
+ - finite or infinite
+1. A binary operation.
  - closed
  - associative
-
-One special value in the set.
+1. One special value in the set.
  - the identity
-
-#+ATTR_REVEAL: :frag (appear)
-So let's see some examples.
 
 #+begin_notes
 Before I show examples, here is some context to understand them.
@@ -693,7 +692,7 @@ And here's an example of an identity element.
 * Code Interlude
 
 #+REVEAL_HTML: <div class='vertspace2'></div>
-Identity problems.
+Identity problems, arity flexibility.
 
 ** Value type problems
 #+REVEAL_HTML: <div class='vertspace2'></div>
@@ -767,6 +766,53 @@ If ~T~ is a semigroup, then ~std::optional<T>~ is a monoid.
 
 #+REVEAL_HTML: <div class='vertspace2'></div>
 Note: a monoid is a semigroup.
+
+** Arity flexibility
+#+REVEAL_HTML: <div class='vertspace2'></div>
+
+You have some choices:
+
+#+ATTR_REVEAL: :frag (appear)
+1. Overload an operator: get fold expressions
+1. Make a special type, define operations on it
+1. Provide a traits class and generic code
+1. Do something with concepts
+1. Other variations...
+
+#+begin_notes
+If you can overload an operator sensibly, you can take advantage of fold
+expressions inline.
+
+If not, one reasonable approach is to use compile-time OO (aka traits classes)
+to provide easy call sites for your monoid operations.
+#+end_notes
+
+** Traits & Concepts
+#+REVEAL_HTML: <div class='vertspace2'></div>
+#+begin_src c++
+template <typename T, typename Name> struct monoid_traits;
+
+template <Numeric T> struct monoid_traits<T, class multiply> {
+  constexpr static auto identity = [] { return T{1}; };
+  constexpr static auto op = [](T a, T b) { return a * b; };
+};
+
+template <typename Name, typename... Ts>
+constexpr auto fold(Ts... ts) {
+    using T = std::common_type_t<Ts...>;
+    using monoid = monoid_traits<T, Name>;
+    T sum = monoid::identity();
+    return ((sum = monoid::op(sum, ts)), ...);
+};
+#+end_src
+
+#+begin_notes
+This is a reasonable way to go.
+
+Name your monoids, and provide a traits class for them.
+
+Then a generic fold function will do what you want.
+#+end_notes
 
 * Monoidal statistics
 #+REVEAL_HTML: <div class='vertspace2'></div>
